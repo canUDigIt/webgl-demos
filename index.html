@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Draw a point (1)</title>
+
+    <!-- JQUERY Libs //-->
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <!-- MATH Libs //-->
+    <script src="js/gl-matrix.js"></script>
+    <!-- WEBGL Libs //-->
+    <script src="js/Globals.js"></script>
+    <script src="js/Program.js"></script>
+    <script src="js/Utils.js"></script>
+    <script src="js/WebGLApp.js"></script>
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec4 a_Position;
+
+        uniform mat4 u_MVMatrix;
+        uniform mat4 u_PMatrix;
+
+        void main() {
+           gl_Position = u_PMatrix * u_MVMatrix * a_Position;
+           gl_PointSize = 10.0;
+        }
+    </script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform vec4 u_FragColor;
+
+        void main() {
+           gl_FragColor = u_FragColor;
+        }
+    </script>
+
+    <script id="code-js" type="text/javascript">
+        var app = null;
+        function runWebGLApp() {
+            app = new WebGLApp("canvas-id");
+            app.configureGLHook = configure;
+            app.loadSceneHook   = load;
+            app.drawSceneHook   = draw;
+            app.run();
+        }
+
+        function configure() {
+            WEBGLAPP_RENDER_RATE = 30;
+
+            position = vec3.fromValues(200.0, 200.0, 0.0);
+            speed = vec3.fromValues(0.0, 0.0, 0.0);
+            acceleration = vec3.fromValues(0.0, 0.0, 0.0);
+
+            mouseLocation = vec3.create();
+            vec3.copy(mouseLocation, position);
+
+            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+
+            vertexBuffer = gl.createBuffer();
+            uploadBufferData(gl, vertexBuffer, position);
+
+            var attributeList = [ "a_Position" ];
+
+            var uniformList = [ "u_MVMatrix",
+                                "u_PMatrix",
+                                "u_FragColor"
+                              ];
+
+            Program.load(attributeList, uniformList);
+
+            color = vec4.fromValues(1.0, 0.0, 0.0, 1.0);
+
+            u_MVMatrix = mat4.create();
+            mat4.translate(u_MVMatrix, u_MVMatrix, [-200, -200, -1]);
+
+            u_PMatrix = mat4.create();
+            mat4.ortho(u_PMatrix, -200, 200, -200, 200, 1, 100);
+
+            gl.uniform4fv(Program.u_FragColor, color);
+            gl.uniformMatrix4fv(Program.u_MVMatrix, false, u_MVMatrix);
+            gl.uniformMatrix4fv(Program.u_PMatrix, false, u_PMatrix);
+        }
+
+        function uploadBufferData() {
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.bufferData(gl.ARRAY_BUFFER, position, gl.STATIC_DRAW);
+        }
+
+        function load() {
+
+        }
+
+        function draw() {
+            gl.viewport(0, 0, c_width, c_height);
+            gl.clear(gl.COLOR_BUFFER_BIT);
+
+            update();
+
+            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
+            gl.vertexAttribPointer(Program.a_Position, 3, gl.FLOAT, false, 0, 0);
+            gl.enableVertexAttribArray(Program.a_Position);
+
+            gl.drawArrays(gl.POINTS, 0, 1);
+        }
+
+        function update() {
+            var direction = vec3.create();
+            vec3.subtract(direction, mouseLocation, position);
+            //vec3.normalize(direction, direction);
+            vec3.scale(acceleration, direction, 0.5);
+
+            vec3.add(speed, speed, acceleration);
+
+            var limit = 10;
+
+            speed[0] = limitValue(speed[0], limit);
+            speed[1] = limitValue(speed[1], limit);
+
+            vec3.add(position, position, speed);
+
+            uploadBufferData(gl, vertexBuffer, position);
+        }
+
+        function limitValue(value, limit) {
+            if (value >= 0)
+                return Math.min(value, limit);
+            else
+                return Math.max(value, -limit);
+        }
+
+    </script>
+</head>
+<body onload="runWebGLApp()">
+    <canvas id="canvas-id" width="400" height="400">
+        Please use a browser supporting "canvas"
+    </canvas>
+
+    <script type="text/javascript">
+        $("#canvas-id").mousemove( function(event) {
+            mouseLocation[0] = event.pageX;
+            mouseLocation[1] = this.width - event.pageY;
+        } );
+    </script>
+</body>
+</html>

@@ -60,8 +60,8 @@ var Program = {
 
      gl.useProgram(prg);
 	 
-	 this.setAttributeLocations(attributeList);
-	 this.setUniformLocations(uniformList);
+     this.setAttributeLocations(attributeList);
+     this.setUniformLocations(uniformList);
 
     },
 	
