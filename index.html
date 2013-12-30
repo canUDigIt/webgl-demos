@@ -7,12 +7,12 @@
     <!-- JQUERY Libs //-->
     <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
     <!-- MATH Libs //-->
-    <script src="js/gl-matrix.js"></script>
+    <script src="js/math/gl-matrix.js"></script>
     <!-- WEBGL Libs //-->
-    <script src="js/Globals.js"></script>
-    <script src="js/Program.js"></script>
-    <script src="js/Utils.js"></script>
-    <script src="js/WebGLApp.js"></script>
+    <script src="js/webgl/Globals.js"></script>
+    <script src="js/webgl/Program.js"></script>
+    <script src="js/webgl/Utils.js"></script>
+    <script src="js/webgl/WebGLApp.js"></script>
 
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec4 a_Position;
@@ -44,6 +44,8 @@
             app.loadSceneHook   = load;
             app.drawSceneHook   = draw;
             app.run();
+
+            startAnimation();
         }
 
         function configure() {
@@ -96,7 +98,7 @@
             gl.viewport(0, 0, c_width, c_height);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
-            update();
+            uploadBufferData(gl, vertexBuffer, position);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
             gl.vertexAttribPointer(Program.a_Position, 3, gl.FLOAT, false, 0, 0);
@@ -105,22 +107,50 @@
             gl.drawArrays(gl.POINTS, 0, 1);
         }
 
-        function update() {
+        var animationRate = 15; // 15ms
+        var elapsedTime;
+        var initialTime;
+        var sceneTime = 0.0;
+
+        function startAnimation() {
+            initialTime = (new Date).getTime();
+            setInterval(onFrame, animationRate/1000);
+        }
+
+        function onFrame() {
+            elapsedTime = ( (new Date).getTime() - initialTime );
+            if (elapsedTime < animationRate) return;
+
+            var steps = Math.floor( elapsedTime / animationRate );
+            while(steps > 0) {
+                animate();
+                steps -= 1;
+            }
+
+            initialTime = (new Date).getTime();
+        }
+
+        function animate() {
+            update(sceneTime);
+
+            sceneTime += 33/1000;
+            draw();
+        }
+
+        function update(time) {
             var direction = vec3.create();
             vec3.subtract(direction, mouseLocation, position);
-            //vec3.normalize(direction, direction);
+            vec3.normalize(direction, direction);
             vec3.scale(acceleration, direction, 0.5);
 
             vec3.add(speed, speed, acceleration);
 
-            var limit = 10;
+            var limit = 5;
 
             speed[0] = limitValue(speed[0], limit);
             speed[1] = limitValue(speed[1], limit);
 
             vec3.add(position, position, speed);
-
-            uploadBufferData(gl, vertexBuffer, position);
         }
 
         function limitValue(value, limit) {
