@@ -4,9 +4,7 @@ var c_width, c_height;
 
 var vertexBuffer;
 
-var position;
-var speed;
-var acceleration;
+var mover;
 var mouseLocation;
 var color;
 

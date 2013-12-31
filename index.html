@@ -51,17 +51,15 @@
         function configure() {
             WEBGLAPP_RENDER_RATE = 30;
 
-            position = vec3.fromValues(200.0, 200.0, 0.0);
-            speed = vec3.fromValues(0.0, 0.0, 0.0);
-            acceleration = vec3.fromValues(0.0, 0.0, 0.0);
+            mover = new Mover(200.0, 200.0);
 
             mouseLocation = vec3.create();
-            vec3.copy(mouseLocation, position);
+            vec3.copy(mouseLocation, mover.position);
 
             gl.clearColor(0.0, 0.0, 0.0, 1.0);
 
             vertexBuffer = gl.createBuffer();
-            uploadBufferData(gl, vertexBuffer, position);
+            uploadBufferData(mover.position);
 
             var attributeList = [ "a_Position" ];
 
@@ -85,9 +83,9 @@
             gl.uniformMatrix4fv(Program.u_PMatrix, false, u_PMatrix);
         }
 
-        function uploadBufferData() {
+        function uploadBufferData(data) {
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, position, gl.STATIC_DRAW);
+            gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
         }
 
         function load() {
@@ -98,7 +96,7 @@
             gl.viewport(0, 0, c_width, c_height);
             gl.clear(gl.COLOR_BUFFER_BIT);
 
-            uploadBufferData(gl, vertexBuffer, position);
+            uploadBufferData(mover.position);
 
             gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
             gl.vertexAttribPointer(Program.a_Position, 3, gl.FLOAT, false, 0, 0);
@@ -131,34 +129,38 @@
         }
 
         function animate() {
-            update(sceneTime);
+            mover.update(sceneTime, mouseLocation);
 
             sceneTime += 33/1000;
             draw();
         }
 
-        function update(time) {
-            var direction = vec3.create();
-            vec3.subtract(direction, mouseLocation, position);
-            vec3.normalize(direction, direction);
-            vec3.scale(acceleration, direction, 0.5);
-
-            vec3.add(speed, speed, acceleration);
-
-            var limit = 5;
-
-            speed[0] = limitValue(speed[0], limit);
-            speed[1] = limitValue(speed[1], limit);
-
-            vec3.add(position, position, speed);
+        function Mover(x, y){
+            this.position = vec3.fromValues(x, y, 0.0);
+            this.speed = vec3.create();
+            this.acceleration = vec3.create();
         }
 
-        function limitValue(value, limit) {
-            if (value >= 0)
-                return Math.min(value, limit);
-            else
-                return Math.max(value, -limit);
-        }
+        Mover.prototype.update = function(time, mousePosition) {
+            vec3.subtract(this.acceleration, mousePosition, this.position);
+
+            var accelerationLimit = 0.5;
+            this.limitValue(this.acceleration, accelerationLimit);
+            
+            vec3.add(this.speed, this.speed, this.acceleration);
+
+            var speedLimit = 5;
+            this.limitValue(this.speed, speedLimit);
+
+            vec3.add(this.position, this.position, this.speed);
+        };
+
+        Mover.prototype.limitValue = function(vector, limit) {
+            if (vec3.length(vector) > limit){
+                vec3.normalize(vector, vector);
+                vec3.scale(vector, vector, limit);
+            }
+        };
 
     </script>
 </head>
