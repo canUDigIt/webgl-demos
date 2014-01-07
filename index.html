@@ -2,17 +2,17 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Draw a point (1)</title>
+    <title>WebGL experimentation</title>
 
     <!-- JQUERY Libs //-->
     <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
     <!-- MATH Libs //-->
     <script src="js/math/gl-matrix.js"></script>
     <!-- WEBGL Libs //-->
-    <script src="js/webgl/Globals.js"></script>
-    <script src="js/webgl/Program.js"></script>
+    <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
     <script src="js/webgl/Utils.js"></script>
-    <script src="js/webgl/WebGLApp.js"></script>
+    <script src="js/physics/Liquid.js"></script>
+    <script src="js/physics/Mover.js"></script>
 
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec4 a_Position;
@@ -37,142 +37,130 @@
     </script>
 
     <script id="code-js" type="text/javascript">
-        var app = null;
-        function runWebGLApp() {
-            app = new WebGLApp("canvas-id");
-            app.configureGLHook = configure;
-            app.loadSceneHook   = load;
-            app.drawSceneHook   = draw;
-            app.run();
 
-            startAnimation();
+        var mouseLocation;
+
+        function runThreeJsApp() {
+            configure();
+            load();
+            render();
         }
 
-        function configure() {
-            WEBGLAPP_RENDER_RATE = 30;
+        (function() {
 
-            mover = new Mover(200.0, 200.0);
+            var canvas, c_width, c_height, halfWidth, halfHeight;
 
-            mouseLocation = vec3.create();
-            vec3.copy(mouseLocation, mover.position);
+            var scene;
+            var camera;
 
-            gl.clearColor(0.0, 0.0, 0.0, 1.0);
+            var renderer;
 
-            vertexBuffer = gl.createBuffer();
-            uploadBufferData(mover.position);
+            var mover, circle;
+            var liquid, rectangle;
 
-            var attributeList = [ "a_Position" ];
+            var animationRate = 15; // 15ms
+            var initialTime = (new Date).getTime();
+            var elapsedTime;
+            var sceneTime = 0.0;
 
-            var uniformList = [ "u_MVMatrix",
-                                "u_PMatrix",
-                                "u_FragColor"
-                              ];
+            window.configure = function() {
+                canvas = document.getElementById("canvas-id");
+                c_width = canvas.width;
+                c_height = canvas.height;
 
-            Program.load(attributeList, uniformList);
+                halfWidth = c_width / 2;
+                halfHeight = c_height / 2;
 
-            color = vec4.fromValues(1.0, 0.0, 0.0, 1.0);
+                mouseLocation = new THREE.Vector3(halfWidth, halfHeight, 0);
 
-            u_MVMatrix = mat4.create();
-            mat4.translate(u_MVMatrix, u_MVMatrix, [-200, -200, -1]);
+                scene = new THREE.Scene();
+                camera = new THREE.OrthographicCamera( -halfWidth, halfWidth, halfHeight, -halfHeight, 1, 1000);
 
-            u_PMatrix = mat4.create();
-            mat4.ortho(u_PMatrix, -200, 200, -200, 200, 1, 100);
+                renderer =  new THREE.WebGLRenderer( { canvas: canvas } );
+                renderer.setSize(c_width, c_height);
+            };
 
-            gl.uniform4fv(Program.u_FragColor, color);
-            gl.uniformMatrix4fv(Program.u_MVMatrix, false, u_MVMatrix);
-            gl.uniformMatrix4fv(Program.u_PMatrix, false, u_PMatrix);
-        }
+            window.load = function() {
+                mover = new Mover( halfWidth, halfHeight, 0, 20 );
 
-        function uploadBufferData(data) {
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
-        }
+                var geometry = new THREE.CircleGeometry(mover.mass / 2);
+                var material = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+                circle = new THREE.Mesh( geometry, material );
 
-        function load() {
+                circle.position.setX(halfWidth);
+                circle.position.setY(halfHeight);
 
-        }
+                scene.add(circle);
 
-        function draw() {
-            gl.viewport(0, 0, c_width, c_height);
-            gl.clear(gl.COLOR_BUFFER_BIT);
+                liquid = new Liquid( 0, 0, c_width, c_height / 3, 0.1 );
 
-            uploadBufferData(mover.position);
+                var rectGeometry = new THREE.CubeGeometry(liquid.width, liquid.height, 0);
+                var rectMaterial = new THREE.MeshBasicMaterial( { color: 0x0000ff } );
 
-            gl.bindBuffer(gl.ARRAY_BUFFER, vertexBuffer);
-            gl.vertexAttribPointer(Program.a_Position, 3, gl.FLOAT, false, 0, 0);
-            gl.enableVertexAttribArray(Program.a_Position);
+                rectangle = new THREE.Mesh( rectGeometry, rectMaterial );
+                rectangle.position.setX(liquid.x);
+                rectangle.position.setY(liquid.y);
 
-            gl.drawArrays(gl.POINTS, 0, 1);
-        }
+                scene.add(rectangle);
 
-        var animationRate = 15; // 15ms
-        var elapsedTime;
-        var initialTime;
-        var sceneTime = 0.0;
+                camera.position.setX(halfWidth);
+                camera.position.setY(halfHeight);
+                camera.position.setZ(2);
+            };
 
-        function startAnimation() {
-            initialTime = (new Date).getTime();
-            setInterval(onFrame, animationRate/1000);
-        }
+            window.render = function() {
+                Utils.requestAnimFrame(render);
 
-        function onFrame() {
-            elapsedTime = ( (new Date).getTime() - initialTime );
-            if (elapsedTime < animationRate) return;
+                elapsedTime = ( (new Date).getTime() - initialTime );
+                if (elapsedTime < animationRate) return;
 
-            var steps = Math.floor( elapsedTime / animationRate );
-            while(steps > 0) {
-                animate();
-                steps -= 1;
+                var steps = Math.floor( elapsedTime / animationRate );
+                while(steps > 0) {
+                    animate();
+                    renderer.render(scene, camera);
+                    steps -= 1;
+                }
+
+                initialTime = (new Date).getTime();
+            };
+
+            function animate() {
+                var gravity = new THREE.Vector3(0, -0.1, 0);
+
+                var friction = new THREE.Vector3();
+                var frictionMagnitude = 0.01;
+                friction.copy(mover.velocity);
+                friction.normalize().negate();
+                friction.multiplyScalar(frictionMagnitude);
+
+                mover.applyForce(gravity);
+                mover.applyForce(friction);
+
+                if (mover.isInside(liquid)) {
+                    mover.drag(liquid);
+                }
+
+                mover.update(sceneTime);
+                mover.checkEdges(c_width, c_height);
+
+                circle.position.copy(mover.position);
+
+                sceneTime += 33/1000;
             }
-
-            initialTime = (new Date).getTime();
-        }
-
-        function animate() {
-            mover.update(sceneTime, mouseLocation);
-
-            sceneTime += 33/1000;
-            draw();
-        }
-
-        function Mover(x, y){
-            this.position = vec3.fromValues(x, y, 0.0);
-            this.speed = vec3.create();
-            this.acceleration = vec3.create();
-        }
-
-        Mover.prototype.update = function(time, mousePosition) {
-            vec3.subtract(this.acceleration, mousePosition, this.position);
-
-            var accelerationLimit = 0.5;
-            this.limitValue(this.acceleration, accelerationLimit);
             
-            vec3.add(this.speed, this.speed, this.acceleration);
-
-            var speedLimit = 5;
-            this.limitValue(this.speed, speedLimit);
-
-            vec3.add(this.position, this.position, this.speed);
-        };
-
-        Mover.prototype.limitValue = function(vector, limit) {
-            if (vec3.length(vector) > limit){
-                vec3.normalize(vector, vector);
-                vec3.scale(vector, vector, limit);
-            }
-        };
+        }());
 
     </script>
 </head>
-<body onload="runWebGLApp()">
+<body onload="runThreeJsApp()">
     <canvas id="canvas-id" width="400" height="400">
         Please use a browser supporting "canvas"
     </canvas>
 
     <script type="text/javascript">
         $("#canvas-id").mousemove( function(event) {
-            mouseLocation[0] = event.pageX;
-            mouseLocation[1] = this.width - event.pageY;
+            mouseLocation.setX(event.pageX);
+            mouseLocation.setY(this.width - event.pageY);
         } );
     </script>
 </body>
