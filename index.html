@@ -42,23 +42,40 @@
             render();
         }
 
-        (function() {
+        (function(global) {
 
-            var canvas, c_width, c_height, halfWidth, halfHeight;
+            var canvas, 
+                c_width, 
+                c_height, 
+                halfWidth, 
+                halfHeight,
 
-            var scene;
-            var camera;
+                scene,
+                camera,
 
-            var renderer;
+                renderer,
 
-            var head, body, leftLeg, rightLeg, leftArm, rightArm;
+                head, 
+                body, 
+                leftLeg, 
+                rightLeg, 
+                leftShoulder, 
+                rightShoulder, 
+                leftArm, 
+                rightArm,
 
-            var animationRate = 15; // 15ms
-            var initialTime = (new Date).getTime();
-            var elapsedTime;
-            var sceneTime = 0.0;
+                // milliseconds
+                animationRate = 15,
+                initialTime = (new Date()).getTime(),
+                elapsedTime,
+                sceneTime = 0.0,
 
-            window.configure = function() {
+                g_leftMouseButton,
+                g_middleMouseButton,
+                g_rightMouseButton,
+                dragStartPos;
+
+            global.configure = function() {
                 canvas = document.getElementById("canvas-id");
                 c_width = canvas.width;
                 c_height = canvas.height;
@@ -71,38 +88,53 @@
 
                 renderer =  new THREE.WebGLRenderer( { canvas: canvas } );
                 renderer.setSize(c_width, c_height);
+
+                g_leftMouseButton = false;
+                g_middleMouseButton = false;
+                g_rightMouseButton = false;
+                dragStartPos = new THREE.Vector2();
             };
 
-            window.load = function() {
+            global.load = function() {
 
-                var headRadius = 5;
-                var headGeometry = new THREE.SphereGeometry( headRadius, 32, 32 );
-                var headMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } );
+                var headRadius = 5,
+                    headGeometry = new THREE.SphereGeometry( headRadius, 32, 32 ),
+                    headMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } ),
+
+                    bodyRadius = 10,
+                    bodyHeight = 25,
+                    bodyGeometry = new THREE.CylinderGeometry( bodyRadius, bodyRadius, bodyHeight ),
+                    bodyMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } ),
+
+                    legRadius = 3,
+                    legHeight = 25,
+                    legGeometry = new THREE.CylinderGeometry( legRadius, legRadius, legHeight ),
+                    legMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } ),
+
+                    armRadius = 3,
+                    armHeight = 30,
+                    armGeometry = new THREE.CylinderGeometry( armRadius, armRadius, armHeight ),
+                    armMaterial = new THREE.MeshBasicMaterial( { color: 0x00ffff } ),
+
+                    translationMat = new THREE.Matrix4();
+
                 head = new THREE.Mesh( headGeometry, headMaterial );
-
-                var bodyRadius = 10;
-                var bodyHeight = 25;
-                var bodyGeometry = new THREE.CylinderGeometry( bodyRadius, bodyRadius, bodyHeight );
-                var bodyMaterial = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
                 body = new THREE.Mesh( bodyGeometry, bodyMaterial );
-
-                var legRadius = 3;
-                var legHeight = 25;
-                var legGeometry = new THREE.CylinderGeometry( legRadius, legRadius, legHeight );
-                var legMaterial = new THREE.MeshBasicMaterial( { color: 0xffff00 } );
                 leftLeg = new THREE.Mesh( legGeometry, legMaterial );
-
                 rightLeg = new THREE.Mesh( legGeometry, legMaterial );
-
-                var armRadius = 3;
-                var armHeight = 30;
-                var armGeometry = new THREE.CylinderGeometry( armRadius, armRadius, armHeight );
-                var armMaterial = new THREE.MeshBasicMaterial( { color: 0x00ffff } );
                 leftArm = new THREE.Mesh( armGeometry, armMaterial );
-
                 rightArm = new THREE.Mesh( armGeometry, armMaterial );
+                leftShoulder = new THREE.Object3D();
+                rightShoulder = new THREE.Object3D();
 
-                var translationMat = new THREE.Matrix4();
+                body.add(head);
+                body.add(leftLeg);
+                body.add(rightLeg);
+                body.add(leftShoulder);
+                body.add(rightShoulder);
+
+                leftShoulder.add(leftArm);
+                rightShoulder.add(rightArm);
 
                 translationMat.makeTranslation( 0, (bodyHeight / 2) + headRadius, 0 );
                 head.applyMatrix( translationMat );
@@ -113,45 +145,119 @@
                 translationMat.makeTranslation( bodyRadius - legRadius, (-bodyHeight / 2) - (legHeight / 2), 0 );
                 rightLeg.applyMatrix( translationMat );
 
-                translationMat.makeTranslation( -bodyRadius - armRadius, 0, 0 );
+                translationMat.makeTranslation( 0, -armHeight/2, 0 );
                 leftArm.applyMatrix( translationMat );
-
-                translationMat.makeTranslation( bodyRadius + armRadius, 0, 0 );
                 rightArm.applyMatrix( translationMat );
 
-                body.add(head);
-                body.add(leftLeg);
-                body.add(rightLeg);
-                body.add(leftArm);
-                body.add(rightArm);
+                translationMat.makeTranslation( -bodyRadius, bodyHeight/2, 0 );
+                leftShoulder.applyMatrix( translationMat );
+
+                translationMat.makeTranslation( bodyRadius, bodyHeight/2, 0 );
+                rightShoulder.applyMatrix( translationMat );
 
                 scene.add(body);
 
                 camera.position.setZ(120);
             };
 
-            window.render = function() {
+            global.render = function() {
+                var steps = Math.floor( elapsedTime / animationRate );
+
                 Utils.requestAnimFrame(render);
 
-                elapsedTime = ( (new Date).getTime() - initialTime );
+                elapsedTime = ( (new Date()).getTime() - initialTime );
                 if (elapsedTime < animationRate) return;
 
-                var steps = Math.floor( elapsedTime / animationRate );
                 while(steps > 0) {
                     animate();
                     renderer.render(scene, camera);
                     steps -= 1;
                 }
 
-                initialTime = (new Date).getTime();
+                initialTime = (new Date()).getTime();
             };
 
             function animate() {
 
                 sceneTime += 33/1000;
             }
+
+            function transformOWithRespectToA(transform, O, A) {
+                var inverseA = new THREE.Matrix4(),
+                    resultingMatrix = new THREE.Matrix4();
+
+                inverseA.getInverse(A);
+                resultingMatrix.multiply(O).multiply(inverseA).multiply(transform).multiply(A);
+
+                return resultingMatrix;
+            }
+
+            function handleMouseDown(event) {
+                switch(event.which)
+                {
+                    case 1:
+                        g_leftMouseButton = true;
+                        break;
+                    case 2:
+                        g_middleMouseButton = true;
+                        break;
+                    case 3:
+                        g_rightMouseButton = true;
+                        break;
+                    default:
+                        break;
+                }
+
+                dragStartPos.set(event.pageX, event.pageY);
+            }
+
+            function handleMouseUp(event) {
+                switch(event.which)
+                {
+                    case 1:
+                        g_leftMouseButton = false;
+                        break;
+                    case 2:
+                        g_middleMouseButton = false;
+                        break;
+                    case 3:
+                        g_rightMouseButton = false;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            function handleMouseMove(event) {
+
+                if (g_leftMouseButton || g_middleMouseButton || g_rightMouseButton) {
+                    var currentPos = new THREE.Vector2(event.pageX, event.pageY),
+                        distance = dragStartPos.distanceTo(currentPos),
+                        angle = distance % 360,
+                        rotationMatrix = new THREE.Matrix4();
+
+                    if (g_leftMouseButton) {
+                        rotationMatrix.makeRotationX(angle);
+                    }
+
+                    if (g_rightMouseButton) {
+                        rotationMatrix.makeRotationY(angle);
+                    }
+
+                    var objectRotationFrame = new THREE.Matrix4();
+                    objectRotationFrame.copyPosition( body.matrix );
+                    objectRotationFrame.extractRotation( camera.matrix );
+
+                    body.applyMatrix( transformOWithRespectToA(rotationMatrix, body.matrix, objectRotationFrame) );
+                }
+
+            }
+
+            $("#canvas-id").mousedown( handleMouseDown );
+            $("#canvas-id").mouseup( handleMouseUp );
+            $("#canvas-id").mousemove( handleMouseMove );
             
-        }());
+        }(this));
 
     </script>
 </head>
@@ -161,8 +267,8 @@
     </canvas>
 
     <script type="text/javascript">
-        $("#canvas-id").mousemove( function(event) {
-        } );
+
+        
     </script>
 </body>
 </html>

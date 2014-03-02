@@ -1,12 +1,10 @@
-var gl;
-var prg;
-var c_width, c_height;
+var gl,
+	prg,
 
-var vertexBuffer;
+	c_width, 
+	c_height,
 
-var mover;
-var mouseLocation;
-var color;
+	vertexBuffer,
 
-var u_MVMatrix;
-var u_PMatrix;
+	u_MVMatrix,
+	u_PMatrix;
