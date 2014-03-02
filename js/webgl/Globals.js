@@ -1,10 +1,4 @@
-var gl,
-	prg,
+var renderer,
 
 	c_width, 
-	c_height,
-
-	vertexBuffer,
-
-	u_MVMatrix,
-	u_PMatrix;
+	c_height;

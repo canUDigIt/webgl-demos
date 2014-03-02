@@ -10,7 +10,9 @@
     <script src="js/math/gl-matrix.js"></script>
     <!-- WEBGL Libs //-->
     <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+    <script src="js/webgl/Globals.js"></script>
     <script src="js/webgl/Utils.js"></script>
+    <script src="js/webgl/ThreejsApp.js"></script>
 
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec4 a_Position;
@@ -36,24 +38,44 @@
 
     <script id="code-js" type="text/javascript">
 
-        function runThreeJsApp() {
-            configure();
-            load();
-            render();
-        }
+        (function() {
 
-        (function(global) {
+            $( document ).ready( function() {
+                runThreeJsApp();
+            });
 
-            var canvas, 
-                c_width, 
-                c_height, 
-                halfWidth, 
+            function runThreeJsApp() {
+                var canvas = document.getElementById("canvas-id"),
+                    app = new ThreejsApp( { canvas : canvas } );
+
+                c_width = canvas.width;
+                c_height = canvas.height;
+
+                app.configureHook = configure;
+                app.loadSceneHook = load;
+                app.drawSceneHook = render;
+
+                $( "#canvas-id" )
+                    .mousedown( handleMouseDown )
+                    .mouseup( handleMouseUp )
+                    .mousemove( handleMouseMove );
+
+                app.run();
+            }
+
+            Math.radians = function(degrees) {
+                return degrees * Math.PI / 180;
+            };
+
+            Math.degrees = function(radians) {
+                return radians * 180 / Math.PI;
+            };
+
+            var halfWidth, 
                 halfHeight,
 
                 scene,
                 camera,
-
-                renderer,
 
                 head, 
                 body, 
@@ -73,30 +95,24 @@
                 g_leftMouseButton,
                 g_middleMouseButton,
                 g_rightMouseButton,
-                dragStartPos;
+                g_lastPosition;
 
-            global.configure = function() {
-                canvas = document.getElementById("canvas-id");
-                c_width = canvas.width;
-                c_height = canvas.height;
-
+            function configure() {
                 halfWidth = c_width / 2;
                 halfHeight = c_height / 2;
 
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera( 45, c_width/c_height, 1, 1000);
 
-                renderer =  new THREE.WebGLRenderer( { canvas: canvas } );
                 renderer.setSize(c_width, c_height);
 
                 g_leftMouseButton = false;
                 g_middleMouseButton = false;
                 g_rightMouseButton = false;
-                dragStartPos = new THREE.Vector2();
-            };
+                g_lastPosition = new THREE.Vector2();
+            }
 
-            global.load = function() {
-
+            function load() {
                 var headRadius = 5,
                     headGeometry = new THREE.SphereGeometry( headRadius, 32, 32 ),
                     headMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000 } ),
@@ -158,15 +174,15 @@
                 scene.add(body);
 
                 camera.position.setZ(120);
-            };
+            }
 
-            global.render = function() {
+            function render() {
                 var steps = Math.floor( elapsedTime / animationRate );
 
-                Utils.requestAnimFrame(render);
-
                 elapsedTime = ( (new Date()).getTime() - initialTime );
-                if (elapsedTime < animationRate) return;
+                if (elapsedTime < animationRate) {
+                    return;
+                }
 
                 while(steps > 0) {
                     animate();
@@ -175,19 +191,16 @@
                 }
 
                 initialTime = (new Date()).getTime();
-            };
+            }
 
             function animate() {
-
                 sceneTime += 33/1000;
             }
 
-            function transformOWithRespectToA(transform, O, A) {
-                var inverseA = new THREE.Matrix4(),
-                    resultingMatrix = new THREE.Matrix4();
+            function transformWithRespectToA(transform, A) {
+                var resultingMatrix = new THREE.Matrix4();
 
-                inverseA.getInverse(A);
-                resultingMatrix.multiply(O).multiply(inverseA).multiply(transform).multiply(A);
+                resultingMatrix.getInverse(A).multiply(transform).multiply(A);
 
                 return resultingMatrix;
             }
@@ -207,8 +220,6 @@
                     default:
                         break;
                 }
-
-                dragStartPos.set(event.pageX, event.pageY);
             }
 
             function handleMouseUp(event) {
@@ -229,39 +240,44 @@
             }
 
             function handleMouseMove(event) {
+                var currentPosition = new THREE.Vector2(event.pageX, event.pageY);
 
                 if (g_leftMouseButton || g_middleMouseButton || g_rightMouseButton) {
-                    var currentPos = new THREE.Vector2(event.pageX, event.pageY),
-                        distance = dragStartPos.distanceTo(currentPos),
-                        angle = distance % 360,
+                    var diffPos = new THREE.Vector2();
                         rotationMatrix = new THREE.Matrix4();
 
+                    diffPos.subVectors( currentPosition, g_lastPosition );
+
                     if (g_leftMouseButton) {
-                        rotationMatrix.makeRotationX(angle);
+                        if ( Math.abs(diffPos.x) > Math.abs(diffPos.y) ) {
+                            rotationMatrix.makeRotationY( Math.radians( diffPos.x ) );
+                        } 
+                        else {
+                            rotationMatrix.makeRotationX( Math.radians( diffPos.y ) );
+                        }
                     }
 
                     if (g_rightMouseButton) {
-                        rotationMatrix.makeRotationY(angle);
+                        
                     }
 
-                    var objectRotationFrame = new THREE.Matrix4();
+                    var objectRotationFrame = new THREE.Matrix4(),
+                        correctedRotationMatrix = new THREE.Matrix4();
+
                     objectRotationFrame.copyPosition( body.matrix );
                     objectRotationFrame.extractRotation( camera.matrix );
 
-                    body.applyMatrix( transformOWithRespectToA(rotationMatrix, body.matrix, objectRotationFrame) );
+                    body.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
                 }
 
+                g_lastPosition = currentPosition;
             }
-
-            $("#canvas-id").mousedown( handleMouseDown );
-            $("#canvas-id").mouseup( handleMouseUp );
-            $("#canvas-id").mousemove( handleMouseMove );
             
-        }(this));
+        }());
 
     </script>
 </head>
-<body onload="runThreeJsApp()">
+<body>
     <canvas id="canvas-id" width="400" height="400">
         Please use a browser supporting "canvas"
     </canvas>
