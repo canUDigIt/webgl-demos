@@ -44,6 +44,14 @@
                 runThreeJsApp();
             });
 
+            $( document ).keypress( function(event) {
+
+                if (event.which === 111) {
+                    moveablePartsIndex = (++moveablePartsIndex) % moveableParts.length;
+                }
+
+            });
+
             function runThreeJsApp() {
                 var canvas = document.getElementById("canvas-id"),
                     app = new ThreejsApp( { canvas : canvas } );
@@ -78,13 +86,18 @@
                 camera,
 
                 head, 
-                body, 
+                body,
+                leftHip,
+                rightHip,
                 leftLeg, 
                 rightLeg, 
                 leftShoulder, 
                 rightShoulder, 
                 leftArm, 
                 rightArm,
+
+                moveableParts = [],
+                moveablePartsIndex = 0,
 
                 // milliseconds
                 animationRate = 15,
@@ -140,25 +153,36 @@
                 rightLeg = new THREE.Mesh( legGeometry, legMaterial );
                 leftArm = new THREE.Mesh( armGeometry, armMaterial );
                 rightArm = new THREE.Mesh( armGeometry, armMaterial );
+                leftHip = new THREE.Object3D();
+                rightHip = new THREE.Object3D();
                 leftShoulder = new THREE.Object3D();
                 rightShoulder = new THREE.Object3D();
 
-                body.add(head);
-                body.add(leftLeg);
-                body.add(rightLeg);
-                body.add(leftShoulder);
-                body.add(rightShoulder);
+                body.add( head );
+                body.add( leftHip );
+                body.add( rightHip );
+                body.add( leftShoulder );
+                body.add( rightShoulder );
 
-                leftShoulder.add(leftArm);
-                rightShoulder.add(rightArm);
+                leftHip.add( leftLeg );
+                rightHip.add( rightLeg );
+
+                leftShoulder.add( leftArm );
+                rightShoulder.add( rightArm );
 
                 translationMat.makeTranslation( 0, (bodyHeight / 2) + headRadius, 0 );
                 head.applyMatrix( translationMat );
 
-                translationMat.makeTranslation( -bodyRadius + legRadius, (-bodyHeight / 2) - (legHeight / 2), 0 );
+                translationMat.makeTranslation( -bodyRadius + legRadius, (-bodyHeight / 2), 0 );
+                leftHip.applyMatrix( translationMat );
+
+                translationMat.makeTranslation( bodyRadius - legRadius, (-bodyHeight / 2), 0 );
+                rightHip.applyMatrix( translationMat );
+
+                translationMat.makeTranslation( 0, -(legHeight / 2), 0 );
                 leftLeg.applyMatrix( translationMat );
 
-                translationMat.makeTranslation( bodyRadius - legRadius, (-bodyHeight / 2) - (legHeight / 2), 0 );
+                translationMat.makeTranslation( 0, -(legHeight / 2), 0 );
                 rightLeg.applyMatrix( translationMat );
 
                 translationMat.makeTranslation( 0, -armHeight/2, 0 );
@@ -174,6 +198,8 @@
                 scene.add(body);
 
                 camera.position.setZ(120);
+
+                moveableParts = [body, leftHip, rightHip, leftShoulder, rightShoulder];
             }
 
             function render() {
@@ -198,9 +224,11 @@
             }
 
             function transformWithRespectToA(transform, A) {
-                var resultingMatrix = new THREE.Matrix4();
+                var resultingMatrix = new THREE.Matrix4(),
+                    inverseA = new THREE.Matrix4();
 
-                resultingMatrix.getInverse(A).multiply(transform).multiply(A);
+                inverseA.getInverse(A);
+                resultingMatrix.multiply(A).multiply(transform).multiply(inverseA);
 
                 return resultingMatrix;
             }
@@ -262,12 +290,13 @@
                     }
 
                     var objectRotationFrame = new THREE.Matrix4(),
-                        correctedRotationMatrix = new THREE.Matrix4();
+                        correctedRotationMatrix = new THREE.Matrix4(),
+                        objectToRotate = moveableParts[moveablePartsIndex];
 
-                    objectRotationFrame.copyPosition( body.matrix );
+                    objectRotationFrame.copyPosition( objectToRotate.matrix );
                     objectRotationFrame.extractRotation( camera.matrix );
 
-                    body.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
+                    objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
                 }
 
                 g_lastPosition = currentPosition;
