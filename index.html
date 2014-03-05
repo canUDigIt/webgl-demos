@@ -97,6 +97,7 @@
                 rightArm,
 
                 moveableParts = [],
+                transformFunctions = [],
                 moveablePartsIndex = 0,
 
                 // milliseconds
@@ -200,6 +201,26 @@
                 camera.position.setZ(120);
 
                 moveableParts = [body, leftHip, rightHip, leftShoulder, rightShoulder];
+
+                var xyRotation = function(deltaPos, rotationMatrix) {
+                    if (g_leftMouseButton) {
+                        if ( Math.abs(deltaPos.x) > Math.abs(deltaPos.y) ) {
+                            rotationMatrix.makeRotationY( Math.radians( deltaPos.x ) );
+                        } 
+                        else {
+                            rotationMatrix.makeRotationX( Math.radians( deltaPos.y ) );
+                        }
+                    }
+                };
+
+                var xRotation = function(deltaPos, rotationMatrix) {
+                    if (g_leftMouseButton) {
+                        var delta = Math.abs(deltaPos.x) > Math.abs(deltaPos.y) ? deltaPos.x : deltaPos.y;
+                        rotationMatrix.makeRotationX( Math.radians( delta ) );
+                    }
+                };
+
+                transformFunctions = [xyRotation, xRotation, xRotation, xyRotation, xyRotation];
             }
 
             function render() {
@@ -276,18 +297,8 @@
 
                     diffPos.subVectors( currentPosition, g_lastPosition );
 
-                    if (g_leftMouseButton) {
-                        if ( Math.abs(diffPos.x) > Math.abs(diffPos.y) ) {
-                            rotationMatrix.makeRotationY( Math.radians( diffPos.x ) );
-                        } 
-                        else {
-                            rotationMatrix.makeRotationX( Math.radians( diffPos.y ) );
-                        }
-                    }
-
-                    if (g_rightMouseButton) {
-                        
-                    }
+                    var transformFunction = transformFunctions[moveablePartsIndex];
+                    transformFunction(diffPos, rotationMatrix);
 
                     var objectRotationFrame = new THREE.Matrix4(),
                         correctedRotationMatrix = new THREE.Matrix4(),
