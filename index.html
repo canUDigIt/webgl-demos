@@ -50,6 +50,10 @@
                     moveablePartsIndex = (++moveablePartsIndex) % moveableParts.length;
                 }
 
+                if (event.which === 112) {
+                    g_picking = !g_picking;
+                }
+
             });
 
             function runThreeJsApp() {
@@ -106,10 +110,13 @@
                 elapsedTime,
                 sceneTime = 0.0,
 
+                projector,
+
                 g_leftMouseButton,
                 g_middleMouseButton,
                 g_rightMouseButton,
-                g_lastPosition;
+                g_lastPosition,
+                g_picking = false;
 
             function configure() {
                 halfWidth = c_width / 2;
@@ -119,6 +126,8 @@
                 camera = new THREE.PerspectiveCamera( 45, c_width/c_height, 1, 1000);
 
                 renderer.setSize(c_width, c_height);
+
+                projector = new THREE.Projector();
 
                 g_leftMouseButton = false;
                 g_middleMouseButton = false;
@@ -259,6 +268,28 @@
                 {
                     case 1:
                         g_leftMouseButton = true;
+
+                        if ( g_picking ) {
+                            var mouseVector = new THREE.Vector3();
+                            mouseVector.x = 2 * (event.pageX / c_width) - 1;
+                            mouseVector.y = 1 - 2 * ( event.pageY / c_height );
+
+                            var ray = projector.pickingRay( mouseVector.clone(), camera );
+
+                            var intersects = ray.intersectObjects( moveableParts, true );
+
+                            if ( intersects.length > 0 ) {
+                                if( intersects[0].object !== body ) {
+                                    moveablePartsIndex = moveableParts.indexOf(intersects[0].object.parent);
+                                }
+                                else {
+                                    moveablePartsIndex = moveableParts.indexOf(intersects[0].object);
+                                }
+                            }
+
+                            g_picking = false;
+                        }
+
                         break;
                     case 2:
                         g_middleMouseButton = true;
@@ -297,17 +328,19 @@
 
                     diffPos.subVectors( currentPosition, g_lastPosition );
 
-                    var transformFunction = transformFunctions[moveablePartsIndex];
-                    transformFunction(diffPos, rotationMatrix);
+                    if (moveablePartsIndex != -1) {
+                        var transformFunction = transformFunctions[moveablePartsIndex];
+                        transformFunction(diffPos, rotationMatrix);
 
-                    var objectRotationFrame = new THREE.Matrix4(),
-                        correctedRotationMatrix = new THREE.Matrix4(),
-                        objectToRotate = moveableParts[moveablePartsIndex];
+                        var objectRotationFrame = new THREE.Matrix4(),
+                            correctedRotationMatrix = new THREE.Matrix4(),
+                            objectToRotate = moveableParts[moveablePartsIndex];
 
-                    objectRotationFrame.copyPosition( objectToRotate.matrix );
-                    objectRotationFrame.extractRotation( camera.matrix );
+                        objectRotationFrame.copyPosition( objectToRotate.matrix );
+                        objectRotationFrame.extractRotation( camera.matrix );
 
-                    objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
+                        objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
+                    }
                 }
 
                 g_lastPosition = currentPosition;
