@@ -46,11 +46,14 @@
 
             $( document ).keypress( function(event) {
 
-                if (event.which === 111) {
+                var o = 111,
+                    p = 112;
+
+                if (event.which === o) {
                     moveablePartsIndex = (++moveablePartsIndex) % moveableParts.length;
                 }
 
-                if (event.which === 112) {
+                if (event.which === p) {
                     g_picking = !g_picking;
                 }
 
@@ -211,25 +214,55 @@
 
                 moveableParts = [body, leftHip, rightHip, leftShoulder, rightShoulder];
 
-                var xyRotation = function(deltaPos, rotationMatrix) {
+                var xyRotation = function(deltaPos) {
+                    var quaternion = new THREE.Quaternion();
+
                     if (g_leftMouseButton) {
                         if ( Math.abs(deltaPos.x) > Math.abs(deltaPos.y) ) {
-                            rotationMatrix.makeRotationY( Math.radians( deltaPos.x ) );
+
+                            quaternion.setFromAxisAngle( camera.up, Math.radians( deltaPos.x ) );
                         } 
                         else {
-                            rotationMatrix.makeRotationX( Math.radians( deltaPos.y ) );
+                            var rightAxis = getCameraRightAxis(camera);
+
+                            quaternion.setFromAxisAngle( rightAxis, Math.radians( deltaPos.y ) );
                         }
                     }
+
+                    return quaternion;
                 };
 
-                var xRotation = function(deltaPos, rotationMatrix) {
+                var xRotation = function(deltaPos) {
+                    var quaternion = new THREE.Quaternion();
+
                     if (g_leftMouseButton) {
-                        var delta = Math.abs(deltaPos.x) > Math.abs(deltaPos.y) ? deltaPos.x : deltaPos.y;
-                        rotationMatrix.makeRotationX( Math.radians( delta ) );
+                        var delta = Math.abs(deltaPos.x) > Math.abs(deltaPos.y) ? deltaPos.x : deltaPos.y,
+                            rightAxis = getCameraRightAxis(camera);
+
+                        quaternion.setFromAxisAngle( rightAxis , Math.radians( delta ) );
                     }
+
+                    return quaternion;
                 };
 
                 transformFunctions = [xyRotation, xRotation, xRotation, xyRotation, xyRotation];
+            }
+
+            function getCameraRightAxis(cam) {
+                var rightAxis = new THREE.Vector3(), 
+                    lookAtVector = getCameraLookAt(cam);
+
+                rightAxis.crossVectors( lookAtVector, cam.up );
+
+                return rightAxis;
+            }
+
+            function getCameraLookAt(cam) {
+                var lookAtVector = new THREE.Vector3(0, 0, -1);
+
+                lookAtVector.applyQuaternion( cam.quaternion );
+
+                return lookAtVector;
             }
 
             function render() {
@@ -328,22 +361,25 @@
 
                     diffPos.subVectors( currentPosition, g_lastPosition );
 
-                    if (moveablePartsIndex != -1) {
-                        var transformFunction = transformFunctions[moveablePartsIndex];
-                        transformFunction(diffPos, rotationMatrix);
-
-                        var objectRotationFrame = new THREE.Matrix4(),
-                            correctedRotationMatrix = new THREE.Matrix4(),
-                            objectToRotate = moveableParts[moveablePartsIndex];
-
-                        objectRotationFrame.copyPosition( objectToRotate.matrix );
-                        objectRotationFrame.extractRotation( camera.matrix );
-
-                        objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
-                    }
+                    rotateMovablePart(diffPos);
                 }
 
                 g_lastPosition = currentPosition;
+            }
+
+            function rotateMovablePart(deltaPos) {
+                if (moveablePartsIndex != -1) {
+                    var transformFunction = transformFunctions[moveablePartsIndex],
+                        objectRotationFrame = new THREE.Matrix4(),
+                        objectToRotate = moveableParts[moveablePartsIndex];
+
+                    var rotationMatrix = new THREE.Matrix4().makeRotationFromQuaternion( transformFunction(deltaPos) );
+
+                    objectRotationFrame.copyPosition( objectToRotate.matrix );
+                    objectRotationFrame.extractRotation( camera.matrix );
+
+                    objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
+                }
             }
             
         }());
