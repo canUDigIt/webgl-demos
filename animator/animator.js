@@ -1,3 +1,18 @@
+$( document ).keypress( function(event) {
+
+    var o = 111,
+        p = 112;
+
+    if (event.which === o) {
+        moveablePartsIndex = (++moveablePartsIndex) % moveableParts.length;
+    }
+
+    if (event.which === p) {
+        g_picking = !g_picking;
+    }
+
+});
+
 Math.radians = function(degrees) {
     return degrees * Math.PI / 180;
 };
