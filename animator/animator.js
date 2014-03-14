@@ -1,3 +1,22 @@
+function runApp() {
+    var canvas = document.getElementById("canvas-id"),
+        app = new ThreejsApp( { canvas : canvas } );
+
+    c_width = canvas.width;
+    c_height = canvas.height;
+
+    app.configureHook = configure;
+    app.loadSceneHook = load;
+    app.drawSceneHook = render;
+
+    $( "#canvas-id" )
+        .mousedown( handleMouseDown )
+        .mouseup( handleMouseUp )
+        .mousemove( handleMouseMove );
+
+    app.run();
+}
+
 $( document ).keypress( function(event) {
 
     var o = 111,

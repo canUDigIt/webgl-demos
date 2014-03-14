@@ -42,27 +42,8 @@
         (function() {
 
             $( document ).ready( function() {
-                runThreeJsApp();
+                runApp();
             });
-
-            function runThreeJsApp() {
-                var canvas = document.getElementById("canvas-id"),
-                    app = new ThreejsApp( { canvas : canvas } );
-
-                c_width = canvas.width;
-                c_height = canvas.height;
-
-                app.configureHook = configure;
-                app.loadSceneHook = load;
-                app.drawSceneHook = render;
-
-                $( "#canvas-id" )
-                    .mousedown( handleMouseDown )
-                    .mouseup( handleMouseUp )
-                    .mousemove( handleMouseMove );
-
-                app.run();
-            }
             
         }());
 
