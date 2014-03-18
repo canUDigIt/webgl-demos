@@ -240,16 +240,6 @@ function animate() {
     sceneTime += 33/1000;
 }
 
-function transformWithRespectToA(transform, A) {
-    var resultingMatrix = new THREE.Matrix4(),
-        inverseA = new THREE.Matrix4();
-
-    inverseA.getInverse(A);
-    resultingMatrix.multiply(A).multiply(transform).multiply(inverseA);
-
-    return resultingMatrix;
-}
-
 function handleMouseDown(event) {
     switch(event.which)
     {
@@ -334,4 +324,14 @@ function rotateMovablePart(deltaPos) {
 
         objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
     }
+}
+
+function transformWithRespectToA(transform, A) {
+    var resultingMatrix = new THREE.Matrix4(),
+        inverseA = new THREE.Matrix4();
+
+    inverseA.getInverse(A);
+    resultingMatrix.multiply(A).multiply(transform).multiply(inverseA);
+
+    return resultingMatrix;
 }
