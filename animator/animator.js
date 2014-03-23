@@ -20,17 +20,66 @@ function runApp() {
 $( document ).keypress( function(event) {
 
     var o = 111,
-        p = 112;
+        p = 112,
+        space = 32,
+        u = 117,
+        greaterThan = 62,
+        lessThan = 60, 
+        d = 100,
+        n = 110;
 
-    if (event.which === o) {
+    switch (event.which)
+    {
+    case o:
         moveablePartsIndex = (++moveablePartsIndex) % moveableParts.length;
-    }
+        break;
 
-    if (event.which === p) {
+    case p:
         g_picking = !g_picking;
+        break;
+
+    case space:
+        restoreCurrentKeyFrame();
+        break;
+
+    case u:
+        setCurrentKeyFrameWithCurrentState();
+        break;
+
+    case greaterThan:
+        keyFrameSystem.nextKeyFrame();
+        break;
+
+    case lessThan:
+        keyFrameSystem.previousKeyFrame();
+        break;
+
+    case d:
+        keyFrameSystem.deleteCurrentKeyFrame();
+        break;
+
+    case n:
+        keyFrameSystem.newKeyFrame( currentState );
+        break;
     }
 
 });
+
+function restoreCurrentKeyFrame() {
+    currentState.copy( keyFrameSystem.getCurrentKeyFrame() );
+
+    moveableParts.forEach( function(item) {
+        var objectState = currentState.frames.get( item.id );
+
+        item.position.copy( objectState[0] );
+        item.quaternion.copy( objectState[1] );
+        item.scale.copy( objectState[2] );
+    } );
+}
+
+function setCurrentKeyFrameWithCurrentState() {
+    keyFrameSystem.setCurrentKeyFrame( currentState );
+}
 
 Math.radians = function(degrees) {
     return degrees * Math.PI / 180;
@@ -68,6 +117,9 @@ var halfWidth,
     sceneTime = 0.0,
 
     projector,
+
+    keyFrameSystem,
+    currentState,
 
     g_leftMouseButton,
     g_middleMouseButton,
@@ -168,6 +220,14 @@ function load() {
 
     moveableParts = [body, leftHip, rightHip, leftShoulder, rightShoulder];
 
+    currentState = new KeyFrame();
+
+    moveableParts.forEach( function(part) {
+        currentState.frames.put( part.id, extractCurrentState(part) );
+    });
+
+    keyFrameSystem = new KeyFrameSystem(currentState);
+
     var xyRotation = function(deltaPos) {
         var quaternion = new THREE.Quaternion();
 
@@ -251,18 +311,7 @@ function handleMouseDown(event) {
                 mouseVector.x = 2 * (event.pageX / c_width) - 1;
                 mouseVector.y = 1 - 2 * ( event.pageY / c_height );
 
-                var ray = projector.pickingRay( mouseVector.clone(), camera );
-
-                var intersects = ray.intersectObjects( moveableParts, true );
-
-                if ( intersects.length > 0 ) {
-                    if( intersects[0].object !== body ) {
-                        moveablePartsIndex = moveableParts.indexOf(intersects[0].object.parent);
-                    }
-                    else {
-                        moveablePartsIndex = moveableParts.indexOf(intersects[0].object);
-                    }
-                }
+                pickObject(mouseVector);
 
                 g_picking = false;
             }
@@ -276,6 +325,21 @@ function handleMouseDown(event) {
             break;
         default:
             break;
+    }
+}
+
+function pickObject(mouseVector) {
+    var ray = projector.pickingRay( mouseVector.clone(), camera );
+
+    var intersects = ray.intersectObjects( moveableParts, true );
+
+    if ( intersects.length > 0 ) {
+        if( intersects[0].object !== body ) {
+            moveablePartsIndex = moveableParts.indexOf(intersects[0].object.parent);
+        }
+        else {
+            moveablePartsIndex = moveableParts.indexOf(intersects[0].object);
+        }
     }
 }
 
@@ -301,7 +365,6 @@ function handleMouseMove(event) {
 
     if (g_leftMouseButton || g_middleMouseButton || g_rightMouseButton) {
         var diffPos = new THREE.Vector2();
-            rotationMatrix = new THREE.Matrix4();
 
         diffPos.subVectors( currentPosition, g_lastPosition );
 
@@ -322,7 +385,9 @@ function rotateMovablePart(deltaPos) {
         objectRotationFrame.copyPosition( objectToRotate.matrix );
         objectRotationFrame.extractRotation( camera.matrix );
 
-        objectToRotate.applyMatrix( transformWithRespectToA( rotationMatrix, objectRotationFrame ) );
+        var transform = transformWithRespectToA( rotationMatrix, objectRotationFrame );
+        objectToRotate.applyMatrix( transform );
+        currentState.frames.put(objectToRotate.id, extractCurrentState( objectToRotate ));
     }
 }
 
@@ -334,4 +399,12 @@ function transformWithRespectToA(transform, A) {
     resultingMatrix.multiply(A).multiply(transform).multiply(inverseA);
 
     return resultingMatrix;
+}
+
+function extractCurrentState( object3D ) {
+    var position = new THREE.Vector3().copy( object3D.position ),
+        quaternion = new THREE.Quaternion().copy( object3D.quaternion ),
+        scale = new THREE.Vector3().copy( object3D.scale );
+
+    return [position, quaternion, scale];
 }
