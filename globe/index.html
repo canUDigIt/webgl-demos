@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGL experimentation</title>
+
+    <!-- JQUERY Libs //-->
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <!-- MATH Libs //-->
+    <script src="js/math/gl-matrix.js"></script>
+    <!-- WEBGL Libs //-->
+    <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+    <script src="js/webgl/Globals.js"></script>
+    <script src="js/webgl/Utils.js"></script>
+    <script src="js/webgl/ThreejsApp.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/globe.js"></script>
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec4 a_Position;
+
+        uniform mat4 u_MVMatrix;
+        uniform mat4 u_PMatrix;
+        uniform vec3 u_LightPostion;
+        uniform vec3 u_EyePosition;
+
+        out vec3 worldPosition;
+        out vec3 positionToLight;
+        out vec3 positionToEye;
+
+        void main() {
+           gl_Position = u_PMatrix * u_MVMatrix * a_Position;
+           worldPosition = a_Position.xyz;
+           positionToLight = u_LightPostion - worldPosition;
+           positionToEye = u_EyePosition - worldPosition;
+        }
+    </script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform vec3 u_OneOverRadiiSquared;
+        uniform sampler2D u_Texture0;
+        uniform vec4 u_Shininess;
+
+        in vec3 worldPosition;
+        in vec3 positionToLight;
+        in vec3 positionToEye;
+
+        float LightIntensity( vec3 normal, vec3 toLight, vec3 toEye, vec4 shininess )
+        {
+            vec3 toReflectedLight = reflect( -toLight, normal );
+
+            float diffuse = max( dot( toLight, normal ), 0.0 );
+            float specular = max( dot( toReflectedLight, toEye ), 0.0 );
+            specular = pow( specular, shininess.w );
+
+            return  ( shininess.x * diffuse ) +
+                    ( shininess.y * specular ) +
+                      shininess.z;
+        }
+
+        vec3 GeodeticSurfaceNormal( vec3 positionOnEllipsoid, vec3 oneOverEllipsoidRadiiSquare )
+        {
+            return normalize( positionOnEllipsoid * oneOverEllipsoidRadiiSquare );
+        }
+
+        vec2 ComputeTextureCoordinate( vec3 normal )
+        {
+            return vec2( 
+                            atan( normal.y, normal.x) * u_OneOverTwoPi + 0.5,
+                            asin( normal.z ) * u_OneOverPi + 0.5
+                        );
+        }
+
+        void main() 
+        {
+            vec3 normal = GeodeticSurfaceNormal( worldPosition, u_OneOverRadiiSquared );
+            float intensity = LightIntensity( normal, positionToLight, positionToEye, shininess );
+            vec2 textureCoordinate = ComputeTextureCoordinate( normal );
+            gl_FragColor = intensity * texture( u_Texture0, textureCoordinate );
+        }
+    </script>
+
+    <script id="code-js" type="text/javascript">
+
+        (function() {
+
+            $( document ).ready( function() {
+                runApp();
+            });
+            
+        }());
+
+    </script>
+</head>
+<body>
+    <canvas id="canvas-id" width="400" height="400">
+        Please use a browser supporting "canvas"
+    </canvas>
+
+    <script type="text/javascript">
+
+        
+    </script>
+</body>
+</html>

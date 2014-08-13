@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>WebGL experimentation</title>
+
+    <!-- JQUERY Libs //-->
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <!-- MATH Libs //-->
+    <script src="js/math/gl-matrix.js"></script>
+    <!-- WEBGL Libs //-->
+    <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+    <script src="js/webgl/Globals.js"></script>
+    <script src="js/webgl/Utils.js"></script>
+    <script src="js/webgl/ThreejsApp.js"></script>
+    <script src="js/map.js"></script>
+    <!-- <script src="js/keyframe.js"></script>
+    <script src="animator/animator.js"></script> -->
+    <script src="interpolation/bezier.js"></script>
+
+    <script id="shader-vs" type="x-shader/x-vertex">
+        attribute vec4 a_Position;
+
+        uniform mat4 u_MVMatrix;
+        uniform mat4 u_PMatrix;
+
+        void main() {
+           gl_Position = u_PMatrix * u_MVMatrix * a_Position;
+           gl_PointSize = 10.0;
+        }
+    </script>
+
+    <script id="shader-fs" type="x-shader/x-fragment">
+        precision mediump float;
+
+        uniform vec4 u_FragColor;
+
+        void main() {
+           gl_FragColor = u_FragColor;
+        }
+    </script>
+
+    <script id="code-js" type="text/javascript">
+
+        (function() {
+
+            $( document ).ready( function() {
+                runApp();
+            });
+            
+        }());
+
+    </script>
+</head>
+<body>
+    <canvas id="canvas-id" width="400" height="400">
+        Please use a browser supporting "canvas"
+    </canvas>
+
+    <script type="text/javascript">
+
+        
+    </script>
+</body>
+</html>
