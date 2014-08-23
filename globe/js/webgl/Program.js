@@ -49,16 +49,16 @@ var Program = {
      var fragmentShader          = Program.getShader(gl, "shader-fs");
      var vertexShader            = Program.getShader(gl, "shader-vs");
      
-     prg = gl.createProgram();
-     gl.attachShader(prg, vertexShader);
-     gl.attachShader(prg, fragmentShader);
-     gl.linkProgram(prg);
+     this.programId = gl.createProgram();
+     gl.attachShader(this.programId, vertexShader);
+     gl.attachShader(this.programId, fragmentShader);
+     gl.linkProgram(this.programId);
 
-     if (!gl.getProgramParameter(prg, gl.LINK_STATUS)) {
+     if (!gl.getProgramParameter(this.programId, gl.LINK_STATUS)) {
       alert("Could not initialise shaders");
      }
 
-     gl.useProgram(prg);
+     gl.useProgram(this.programId);
 	 
      this.setAttributeLocations(attributeList);
      this.setUniformLocations(uniformList);
@@ -68,7 +68,7 @@ var Program = {
 	setAttributeLocations: function (attrList){
 		
 		for(var i=0, max = attrList.length; i <max; i+=1){
-			this[attrList[i]] = gl.getAttribLocation(prg, attrList[i]);
+			this[attrList[i]] = gl.getAttribLocation(this.programId, attrList[i]);
 		}
 
 	},
@@ -76,7 +76,7 @@ var Program = {
 	setUniformLocations: function (uniformList){
 		
 		for(var i=0, max = uniformList.length; i < max; i +=1){
-			this[uniformList[i]] = gl.getUniformLocation(prg, uniformList[i]);
+			this[uniformList[i]] = gl.getUniformLocation(this.programId, uniformList[i]);
 		}
 	}
 }

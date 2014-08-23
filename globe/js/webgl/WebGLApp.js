@@ -5,6 +5,8 @@ var WEBGLAPP_RENDER,
 function WebGLApp(canvas) {
     this.loadSceneHook = undefined;
     this.configureGLHook = undefined;
+    this.handleContextLostHook = undefined;
+    this.handleContextRestoredHook = undefined;
     gl = Utils.getGLContext(canvas);
 }
   
@@ -17,6 +19,12 @@ WebGLApp.prototype.run = function(){
         }
         if (this.drawSceneHook === undefined){
             alert('The WebGL application cannot start because the drawSceneHook has not been specified'); return;
+        }
+        if (this.handleContextLostHook === undefined) {
+            alert('The WebGL application cannot start because the handleContextLostHook has not been specified'); return;
+        }
+        if (this.handleContextRestoredHook === undefined) {
+            alert('The WebGL application cannot start because the handleContextRestoredHook has not been specified'); return;
         }
         
         this.configureGLHook();
@@ -33,6 +41,10 @@ WebGLApp.prototype.run = function(){
  */
  WebGLApp.prototype.refresh = function(){
     if (WEBGLAPP_RENDER) WEBGLAPP_RENDER();
+ };
+
+ WebGLApp.prototype.stop = function(){
+    cancelRequestAnimFram(renderLoop);
  };
      
 renderLoop = function(){

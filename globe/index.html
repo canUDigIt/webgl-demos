@@ -7,45 +7,47 @@
     <!-- JQUERY Libs //-->
     <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
     <!-- MATH Libs //-->
-    <script src="js/math/gl-matrix.js"></script>
+    <script src="js/math/glMatrix-0.9.5.min.js"></script>
     <!-- WEBGL Libs //-->
-    <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+    <!-- <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script> -->
     <script src="js/webgl/Globals.js"></script>
     <script src="js/webgl/Utils.js"></script>
-    <script src="js/webgl/ThreejsApp.js"></script>
-    <script src="js/map.js"></script>
+    <script src="js/webgl/Program.js"></script>
+    <script src="js/webgl/WebGLApp.js"></script>
     <script src="js/globe.js"></script>
 
     <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec4 a_Position;
+        attribute vec3 a_Position;
 
         uniform mat4 u_MVMatrix;
         uniform mat4 u_PMatrix;
-        uniform vec3 u_LightPostion;
+        uniform vec3 u_LightPosition;
         uniform vec3 u_EyePosition;
 
-        out vec3 worldPosition;
-        out vec3 positionToLight;
-        out vec3 positionToEye;
+        varying vec3 worldPosition;
+        varying vec3 positionToLight;
+        varying vec3 positionToEye;
 
         void main() {
-           gl_Position = u_PMatrix * u_MVMatrix * a_Position;
+           gl_Position = u_PMatrix * u_MVMatrix * vec4( a_Position, 1.0 );
            worldPosition = a_Position.xyz;
-           positionToLight = u_LightPostion - worldPosition;
+           positionToLight = u_LightPosition - worldPosition;
            positionToEye = u_EyePosition - worldPosition;
         }
     </script>
 
     <script id="shader-fs" type="x-shader/x-fragment">
-        precision mediump float;
+        precision highp float;
 
         uniform vec3 u_OneOverRadiiSquared;
-        uniform sampler2D u_Texture0;
+        // uniform sampler2D u_Texture0;
         uniform vec4 u_Shininess;
+        uniform float u_OneOverPi;
+        uniform float u_OneOverTwoPi;
 
-        in vec3 worldPosition;
-        in vec3 positionToLight;
-        in vec3 positionToEye;
+        varying vec3 worldPosition;
+        varying vec3 positionToLight;
+        varying vec3 positionToEye;
 
         float LightIntensity( vec3 normal, vec3 toLight, vec3 toEye, vec4 shininess )
         {
@@ -76,9 +78,10 @@
         void main() 
         {
             vec3 normal = GeodeticSurfaceNormal( worldPosition, u_OneOverRadiiSquared );
-            float intensity = LightIntensity( normal, positionToLight, positionToEye, shininess );
-            vec2 textureCoordinate = ComputeTextureCoordinate( normal );
-            gl_FragColor = intensity * texture( u_Texture0, textureCoordinate );
+            float intensity = LightIntensity( normal, positionToLight, positionToEye, u_Shininess );
+            // vec2 textureCoordinate = ComputeTextureCoordinate( normal );
+            // gl_FragColor = intensity * texture( u_Texture0, textureCoordinate );
+            gl_FragColor = intensity * vec4(1.0, 0.0, 0.0, 1.0);
         }
     </script>
 

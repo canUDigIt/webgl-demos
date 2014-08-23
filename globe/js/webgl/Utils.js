@@ -6,11 +6,11 @@ var	Utils = {
 	* This function is invoked when the WebGL app is starting.
 	*/
 	getGLContext : function(name){
-	    
+        
 		var canvas = document.getElementById(name);
 		var ctx = null;
 		
-		if (canvas == null){
+		if (canvas === null){
 			alert('there is no canvas on this page');
 			return null;
 		}
@@ -87,7 +87,7 @@ var	Utils = {
             nn[z] = ns[i+z];
             
             var len = Math.sqrt((nn[x]*nn[x])+(nn[y]*nn[y])+(nn[z]*nn[z]));
-            if (len == 0) len = 1.0;
+            if (len === 0) len = 1.0;
             
             nn[x] = nn[x]/len;
             nn[y] = nn[y]/len;
@@ -111,7 +111,7 @@ var	Utils = {
         }
         return ts;
     }
-}
+};
 	
 	/**
 	* Provides requestAnimationFrame in a cross browser way.
