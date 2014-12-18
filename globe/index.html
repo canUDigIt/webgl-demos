@@ -7,7 +7,7 @@
     <!-- JQUERY Libs //-->
     <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
     <!-- MATH Libs //-->
-    <script src="js/math/glMatrix-0.9.5.min.js"></script>
+    <script src="js/math/gl-matrix.js"></script>
     <!-- WEBGL Libs //-->
     <!-- <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script> -->
     <script src="js/webgl/Globals.js"></script>
@@ -28,7 +28,8 @@
         varying vec3 positionToLight;
         varying vec3 positionToEye;
 
-        void main() {
+        void main() 
+        {
            gl_Position = u_PMatrix * u_MVMatrix * vec4( a_Position, 1.0 );
            worldPosition = a_Position.xyz;
            positionToLight = u_LightPosition - worldPosition;
@@ -39,49 +40,40 @@
     <script id="shader-fs" type="x-shader/x-fragment">
         precision highp float;
 
-        uniform vec3 u_OneOverRadiiSquared;
-        // uniform sampler2D u_Texture0;
-        uniform vec4 u_Shininess;
-        uniform float u_OneOverPi;
-        uniform float u_OneOverTwoPi;
-
         varying vec3 worldPosition;
         varying vec3 positionToLight;
         varying vec3 positionToEye;
 
-        float LightIntensity( vec3 normal, vec3 toLight, vec3 toEye, vec4 shininess )
+        uniform vec4 u_DiffuseSpecularAmbientShininess;
+
+        float lightIntensity(
+            vec3 normal,
+            vec3 toLight,
+            vec3 toEye,
+            vec4 diffuseSpecularAmbientShininess ) 
         {
             vec3 toReflectedLight = reflect( -toLight, normal );
 
             float diffuse = max( dot( toLight, normal ), 0.0 );
             float specular = max( dot( toReflectedLight, toEye ), 0.0 );
-            specular = pow( specular, shininess.w );
+            specular = pow( specular, diffuseSpecularAmbientShininess.w );
 
-            return  ( shininess.x * diffuse ) +
-                    ( shininess.y * specular ) +
-                      shininess.z;
-        }
-
-        vec3 GeodeticSurfaceNormal( vec3 positionOnEllipsoid, vec3 oneOverEllipsoidRadiiSquare )
-        {
-            return normalize( positionOnEllipsoid * oneOverEllipsoidRadiiSquare );
-        }
-
-        vec2 ComputeTextureCoordinate( vec3 normal )
-        {
-            return vec2( 
-                            atan( normal.y, normal.x) * u_OneOverTwoPi + 0.5,
-                            asin( normal.z ) * u_OneOverPi + 0.5
-                        );
+            return ( diffuseSpecularAmbientShininess.x * diffuse );
+                // ( diffuseSpecularAmbientShininess.x * diffuse ) + 
+                // ( diffuseSpecularAmbientShininess.y * specular ) +
+                // ( diffuseSpecularAmbientShininess.z );
         }
 
         void main() 
         {
-            vec3 normal = GeodeticSurfaceNormal( worldPosition, u_OneOverRadiiSquared );
-            float intensity = LightIntensity( normal, positionToLight, positionToEye, u_Shininess );
-            // vec2 textureCoordinate = ComputeTextureCoordinate( normal );
-            // gl_FragColor = intensity * texture( u_Texture0, textureCoordinate );
-            gl_FragColor = intensity * vec4(1.0, 0.0, 0.0, 1.0);
+            vec3 normal = normalize( worldPosition );
+            float intensity = lightIntensity(
+                normal,
+                normalize( positionToLight ),
+                normalize( positionToEye ),
+                u_DiffuseSpecularAmbientShininess );
+
+            gl_FragColor = vec4( intensity, intensity, intensity, 1.0 );
         }
     </script>
 

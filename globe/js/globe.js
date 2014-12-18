@@ -1,5 +1,8 @@
 var	eye,
 	lightPosition,
+	diffuse,
+	specular,
+	ambient,
 	shininess,
 
 	vbo,
@@ -27,23 +30,31 @@ function runApp() {
 }
 
 function configure() {
-	gl.clearColor( 0.2, 0.2, 0.2, 1.0 );
-	gl.clearDepth( 1.0 );
+	eye = vec3.fromValues( 0, 5, 10 );
+	var center = vec3.fromValues( 0, 0, 0 ),
+		up = vec3.fromValues( 0, 1, 0 );
 
-	eye = vec3.create( [0, 5, 10] );
-	lightPosition = vec3.create( [10, 50, 5] );
+	lightPosition = vec3.create( [2, 2, -7] );
+
+	// Diffuse, specular, ambient are user defined coefficients used to control the lighting
+	// throughout the entire scene. They are percentages, so valid values are 0.0 - 1.0. 
+	// Shininess is an integer exponent. Smaller numbers make large, dull specular highlights,
+	// and high values create tight, sharp highlighs
+	diffuse = 0.7;
+	specular = 0.3;
+	ambient = 0;
 	shininess = 10;
 
 	perspectiveMatrix = mat4.create();
-	mat4.identity( perspectiveMatrix );
-	mat4.perspective( 45, c_width/c_height, 1, 1000, perspectiveMatrix );
+	mat4.perspective( perspectiveMatrix, 45, c_width/c_height, 1, 1000 );
 
 	viewMatrix = mat4.create();
-	mat4.identity( viewMatrix );
-	mat4.lookAt( eye, [0, 0, 0], [0, 1, 0], viewMatrix );
+	mat4.lookAt( viewMatrix, eye, center, up );
 
 	globeModelMatrix = mat4.create();
-	mat4.identity( globeModelMatrix );
+
+	gl.clearColor( 0.2, 0.2, 0.2, 1.0 );
+	gl.clearDepth( 1.0 );
 }
 
 function load() {
@@ -66,7 +77,7 @@ function load() {
 function generateGlobeGeometry() {
 	var numberOfStacks = 10,
 		numberOfSlices = 20,
-		ellipseRadii = vec3.create( [1, 1, 1] ),
+		ellipseRadii = vec3.fromValues( 1, 1, 1 ),
 		vertices = [];
 
 	var i, j;
@@ -178,10 +189,7 @@ function loadGlobeShadingProgram() {
 			"u_PMatrix",
 			"u_LightPosition",
 			"u_EyePosition",
-			"u_OneOverRadiiSquared",
-			"u_Shininess",
-			"u_OneOverPi",
-			"u_OneOverTwoPi"
+			"u_DiffuseSpecularAmbientShininess"
 		];
 
 	Program.load( attributes, uniforms );
@@ -198,19 +206,19 @@ function render() {
 	// gl.uniform1i(Program.u_Texture0, 0);
 
 	var mvMatrix = mat4.create();
-	mat4.multiply( viewMatrix, globeModelMatrix, mvMatrix );
+	mat4.multiply( mvMatrix, viewMatrix, globeModelMatrix );
 	gl.uniformMatrix4fv( Program.u_MVMatrix, false, mvMatrix );
 	gl.uniformMatrix4fv( Program.u_PMatrix, false, perspectiveMatrix );
 
-	gl.uniform3fv( Program.u_LightPosition, lightPosition );
+	gl.uniform3fv( Program.u_LightPosition, eye );
 	gl.uniform3fv( Program.u_EyePosition, eye );
-	gl.uniform1f( Program.u_OneOverRadiiSquared, 1 / Math.pow( globeGeometry.radii[0], 2 ) );
-	gl.uniform1f( Program.u_Shininess, shininess );
 
-	var oneOverPi = 1.0 / Math.PI;
-	var oneOverTwoPi = 1.0 / (2.0 * Math.PI);
-	gl.uniform1f( Program.u_OneOverPi, oneOverPi );
-	gl.uniform1f( Program.u_OneOverTwoPi, oneOverTwoPi );
+	var diffuseSpecularAmbientShininess = [
+		diffuse,
+		specular,
+		ambient,
+		shininess ];
+	gl.uniform4fv( Program.u_DiffuseSpecularAmbientShininess, diffuseSpecularAmbientShininess );
 
 	gl.bindBuffer( gl.ARRAY_BUFFER, vbo );
 	gl.vertexAttribPointer( Program.a_Position, 3, gl.FLOAT, false, 0, 0 );
