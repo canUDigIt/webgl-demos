@@ -5,88 +5,76 @@
     <title>WebGL experimentation</title>
 
     <!-- JQUERY Libs //-->
-    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-    <!-- MATH Libs //-->
-    <script src="js/math/gl-matrix.js"></script>
+    <script src="js/lib/jquery.min.js"></script>
+    <!-- Three.js Libs //-->
+    <!-- <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script>
+    <script src="js/app.js"></script> -->
     <!-- WEBGL Libs //-->
-    <!-- <script src="https://rawgithub.com/mrdoob/three.js/master/build/three.js"></script> -->
-    <script src="js/webgl/Globals.js"></script>
-    <script src="js/webgl/Utils.js"></script>
-    <script src="js/webgl/Program.js"></script>
+    <script src="js/lib/twgl-full.js"></script>
     <script src="js/webgl/WebGLApp.js"></script>
     <script src="js/globe.js"></script>
 
     <script id="shader-vs" type="x-shader/x-vertex">
-        attribute vec3 a_Position;
+        attribute vec4 a_position;
+        attribute vec4 a_normal;
 
-        uniform mat4 u_MVMatrix;
-        uniform mat4 u_PMatrix;
-        uniform vec3 u_LightPosition;
-        uniform vec3 u_EyePosition;
+        uniform mat4 u_modelViewPerspectiveMatrix;
+        uniform vec3 u_cameraLightPosition;
+        uniform vec3 u_cameraEyePosition;
 
         varying vec3 worldPosition;
+        varying vec3 worldNormal;
         varying vec3 positionToLight;
         varying vec3 positionToEye;
 
         void main() 
         {
-           gl_Position = u_PMatrix * u_MVMatrix * vec4( a_Position, 1.0 );
-           worldPosition = a_Position.xyz;
-           positionToLight = u_LightPosition - worldPosition;
-           positionToEye = u_EyePosition - worldPosition;
+           gl_Position = u_modelViewPerspectiveMatrix * a_position;
+           worldPosition = a_position.xyz;
+           worldNormal = a_normal.xyz;
+           positionToLight = u_cameraLightPosition - worldPosition;
+           positionToEye = u_cameraEyePosition - worldPosition;
         }
     </script>
 
     <script id="shader-fs" type="x-shader/x-fragment">
-        precision highp float;
+        precision mediump float;
+
+        uniform vec4 u_diffuseSpecularAmbientShininess;
 
         varying vec3 worldPosition;
+        varying vec3 worldNormal;
         varying vec3 positionToLight;
         varying vec3 positionToEye;
 
-        uniform vec4 u_DiffuseSpecularAmbientShininess;
-
-        float lightIntensity(
+        float LightIntensity(
             vec3 normal,
-            vec3 toLight,
+            vec3 toLight, 
             vec3 toEye,
-            vec4 diffuseSpecularAmbientShininess ) 
+            vec4 diffuseSpecularAmbientShininess)
         {
-            vec3 toReflectedLight = reflect( -toLight, normal );
+            vec3 toReflectedLight = reflect(toLight, normal);
 
-            float diffuse = max( dot( toLight, normal ), 0.0 );
-            float specular = max( dot( toReflectedLight, toEye ), 0.0 );
-            specular = pow( specular, diffuseSpecularAmbientShininess.w );
+            float diffuse = max(dot(toLight, normal), 0.0);
+            float specular = max(dot(toReflectedLight, toEye), 0.0);
+            specular = pow(specular, diffuseSpecularAmbientShininess.w);
 
-            return ( diffuseSpecularAmbientShininess.x * diffuse );
-                // ( diffuseSpecularAmbientShininess.x * diffuse ) + 
-                // ( diffuseSpecularAmbientShininess.y * specular ) +
-                // ( diffuseSpecularAmbientShininess.z );
+            return 
+                (diffuseSpecularAmbientShininess.x * diffuse) +
+                (diffuseSpecularAmbientShininess.y * specular) +
+                diffuseSpecularAmbientShininess.z;
         }
 
         void main() 
         {
-            vec3 normal = normalize( worldPosition );
-            float intensity = lightIntensity(
-                normal,
-                normalize( positionToLight ),
-                normalize( positionToEye ),
-                u_DiffuseSpecularAmbientShininess );
-
+            float intensity = 
+                LightIntensity(
+                    normalize(worldNormal),
+                    normalize(positionToLight),
+                    normalize(positionToEye),
+                    u_diffuseSpecularAmbientShininess);
             gl_FragColor = vec4( intensity, intensity, intensity, 1.0 );
         }
-    </script>
-
-    <script id="code-js" type="text/javascript">
-
-        (function() {
-
-            $( document ).ready( function() {
-                runApp();
-            });
-            
-        }());
-
     </script>
 </head>
 <body>

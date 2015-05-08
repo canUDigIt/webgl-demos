@@ -7,7 +7,10 @@ function WebGLApp(canvas) {
     this.configureGLHook = undefined;
     this.handleContextLostHook = undefined;
     this.handleContextRestoredHook = undefined;
-    gl = Utils.getGLContext(canvas);
+    this.gl = twgl.getWebGLContext(canvas);
+
+    this.width = canvas.width;
+    this.height = canvas.height;
 }
   
 WebGLApp.prototype.run = function(){
@@ -33,22 +36,20 @@ WebGLApp.prototype.run = function(){
         
         WEBGLAPP_RENDER = this.drawSceneHook;
         
-        renderLoop();
+        this.renderLoop = function() {
+            requestAnimationFrame(this.renderLoop);
+
+            this.drawSceneHook();
+        };
  };
  
  /**
  * Causes immediate rendering
  */
  WebGLApp.prototype.refresh = function(){
-    if (WEBGLAPP_RENDER) WEBGLAPP_RENDER();
+    if (this.drawSceneHook) this.drawSceneHook();
  };
 
  WebGLApp.prototype.stop = function(){
-    cancelRequestAnimFram(renderLoop);
+    cancelAnimationFrame(this.renderLoop);
  };
-     
-renderLoop = function(){
-     Utils.requestAnimFrame(renderLoop);
-
-     WEBGLAPP_RENDER();
-};
