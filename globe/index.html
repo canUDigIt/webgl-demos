@@ -17,6 +17,7 @@
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec4 a_position;
         attribute vec4 a_normal;
+        attribute vec2 a_texcoord;
 
         uniform mat4 u_modelViewPerspectiveMatrix;
         uniform vec3 u_cameraLightPosition;
@@ -26,6 +27,7 @@
         varying vec3 worldNormal;
         varying vec3 positionToLight;
         varying vec3 positionToEye;
+        varying vec2 texcoord;
 
         void main() 
         {
@@ -34,6 +36,7 @@
            worldNormal = a_normal.xyz;
            positionToLight = u_cameraLightPosition - worldPosition;
            positionToEye = u_cameraEyePosition - worldPosition;
+           texcoord = a_texcoord;
         }
     </script>
 
@@ -41,11 +44,13 @@
         precision mediump float;
 
         uniform vec4 u_diffuseSpecularAmbientShininess;
+        uniform sampler2D u_texture;
 
         varying vec3 worldPosition;
         varying vec3 worldNormal;
         varying vec3 positionToLight;
         varying vec3 positionToEye;
+        varying vec2 texcoord;
 
         float LightIntensity(
             vec3 normal,
@@ -73,7 +78,7 @@
                     normalize(positionToLight),
                     normalize(positionToEye),
                     u_diffuseSpecularAmbientShininess);
-            gl_FragColor = vec4( intensity, intensity, intensity, 1.0 );
+            gl_FragColor = vec4( intensity * texture2D(u_texture, texcoord).rgb, 1.0 );
         }
     </script>
 </head>
