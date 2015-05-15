@@ -16,41 +16,99 @@
 
     <script id="shader-vs" type="x-shader/x-vertex">
         attribute vec4 a_position;
-        attribute vec4 a_normal;
-        attribute vec2 a_texcoord;
 
         uniform mat4 u_modelViewPerspectiveMatrix;
-        uniform vec3 u_cameraLightPosition;
         uniform vec3 u_cameraEyePosition;
+        uniform vec3 u_cameraLightPosition;
 
         varying vec3 worldPosition;
         varying vec3 worldNormal;
-        varying vec3 positionToLight;
         varying vec3 positionToEye;
-        varying vec2 texcoord;
+        varying vec3 positionToLight;
 
         void main() 
         {
            gl_Position = u_modelViewPerspectiveMatrix * a_position;
            worldPosition = a_position.xyz;
-           worldNormal = a_normal.xyz;
-           positionToLight = u_cameraLightPosition - worldPosition;
            positionToEye = u_cameraEyePosition - worldPosition;
-           texcoord = a_texcoord;
+           positionToLight = u_cameraLightPosition - worldPosition;
         }
     </script>
 
     <script id="shader-fs" type="x-shader/x-fragment">
         precision mediump float;
 
-        uniform vec4 u_diffuseSpecularAmbientShininess;
         uniform sampler2D u_texture;
+        uniform vec4 u_diffuseSpecularAmbientShininess;
+        uniform vec3 u_cameraEyePosition;
+        uniform float u_sphereRadius;
+        uniform float u_oneOverTwoPi;
+        uniform float u_oneOverPi;
 
         varying vec3 worldPosition;
-        varying vec3 worldNormal;
-        varying vec3 positionToLight;
         varying vec3 positionToEye;
-        varying vec2 texcoord;
+        varying vec3 positionToLight;
+
+        vec4 RayIntersectSphere(
+            vec3 rayOrigin,
+            vec3 rayDirection,
+            float radius) 
+        {
+            // intersect a point on an implicit surface
+            // this is just an ad-hoc way to add terrain geometry
+            // it has nothing to do with the atmospheric scattering itself
+
+            vec4 result = vec4(0);
+            vec3 l = vec3(0) - rayOrigin;
+            float s = dot(l , rayDirection );
+
+            float s2 = s * s;
+            float l2 = dot( l, l );
+            float r2 = radius * radius;
+
+            // If sphere is behind ray
+            if (s < 0. && l2 > r2) 
+            {
+                return result;
+            }
+
+            float m2 = l2 - s2;
+
+            // Will ray miss sphere?
+            if (m2 > r2) 
+            {
+                return result;
+            }
+
+            float q = sqrt(r2 - m2);
+            float t = 0.;
+
+            if (l2 > r2) 
+            {
+                t = s - q;
+            }
+            else
+            {
+                t = s + q;
+            }
+
+            return vec4( rayOrigin + rayDirection * t, 1 );
+        }
+
+        vec3 GeodeticSurfaceNormal(
+            vec3 positionOnEllipsoid,
+            vec3 oneOverEllipsoidRadiiSquared) 
+        {
+            return normalize(
+                positionOnEllipsoid * oneOverEllipsoidRadiiSquared);
+        }
+
+        vec2 ComputeTextureCoordinates(vec3 normal)
+        {
+            return vec2(
+                atan(normal.y, normal.x) * u_oneOverTwoPi + 0.5,
+                asin(normal.z) * u_oneOverPi + 0.5);
+        }
 
         float LightIntensity(
             vec3 normal,
@@ -58,7 +116,7 @@
             vec3 toEye,
             vec4 diffuseSpecularAmbientShininess)
         {
-            vec3 toReflectedLight = reflect(toLight, normal);
+            vec3 toReflectedLight = reflect(-toLight, normal);
 
             float diffuse = max(dot(toLight, normal), 0.0);
             float specular = max(dot(toReflectedLight, toEye), 0.0);
@@ -72,13 +130,40 @@
 
         void main() 
         {
-            float intensity = 
-                LightIntensity(
-                    normalize(worldNormal),
-                    normalize(positionToLight),
-                    normalize(positionToEye),
-                    u_diffuseSpecularAmbientShininess);
-            gl_FragColor = vec4( intensity * texture2D(u_texture, texcoord).rgb, 1.0 );
+            vec3 viewdir = normalize(worldPosition - u_cameraEyePosition);
+            vec4 intersection = 
+                RayIntersectSphere(
+                    u_cameraEyePosition,
+                    viewdir,
+                    u_sphereRadius);
+
+            if (intersection.w == 0.) 
+            {
+                gl_FragColor = vec4(0, 0, 0, 1);
+            }
+            else
+            {
+                float oneOverRadiiSquared = 1.0 / (u_sphereRadius * u_sphereRadius);
+                vec3 oneOverEllipsoidRadiiSquared =
+                    vec3(
+                        oneOverRadiiSquared,
+                        oneOverRadiiSquared,
+                        oneOverRadiiSquared);
+
+                vec3 normal = GeodeticSurfaceNormal(
+                    intersection.xyz,
+                    oneOverEllipsoidRadiiSquared);
+
+                float intensity = 
+                    LightIntensity(
+                        normal,
+                        normalize(positionToLight),
+                        normalize(positionToEye),
+                        u_diffuseSpecularAmbientShininess);
+
+                vec2 texcoord = ComputeTextureCoordinates(normal);
+                gl_FragColor = vec4( intensity * texture2D(u_texture, texcoord).rgb, 1.0 );
+            }
         }
     </script>
 </head>

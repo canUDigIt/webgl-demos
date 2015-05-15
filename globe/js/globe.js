@@ -3,12 +3,17 @@
         m4 = twgl.m4,
         width = 0,
         height = 0,
+        eye = [2, 0, 0],
+        target = [0, 0, 0],
         programInfo = {},
         uniforms = {
-            u_modelViewPerspectiveMatrix: m4.identity(),
-            u_cameraLightPosition: [1, 2, -2],
-            u_cameraEyePosition: [0, 0, 1],
-            u_diffuseSpecularAmbientShininess: [0.5, 0.6, 0.2, 100]
+            u_modelViewPerspectiveMatrix: m4.inverse(m4.lookAt(eye, target, [0, 1, 0])),
+            u_cameraLightPosition: [1, 1, 0],
+            u_cameraEyePosition: eye,
+            u_diffuseSpecularAmbientShininess: [0.9, 0.9, 0.2, 100],
+            u_sphereRadius: 1,
+            u_oneOverTwoPi: 1.0 / (2 * Math.PI),
+            u_oneOverPi: 1.0 / Math.PI
         },
         sphereBufferInfo = {};
 
@@ -38,7 +43,7 @@
     }
 
     function load() {
-        sphereBufferInfo = twgl.primitives.createSphereBufferInfo(gl, 1.0, 20.0, 10.0);
+        sphereBufferInfo = twgl.primitives.createCubeBufferInfo(gl, 2.0);
         uniforms.u_texture = twgl.createTexture(gl, { src: "images/2_no_clouds_4k.jpg" });
     }
 
