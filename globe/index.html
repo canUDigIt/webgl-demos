@@ -375,7 +375,8 @@
 
                 // sample the surface texture and
                 // apply inverse gamma 2.2 conversion to the color
-                vec3 surfacecolor = texture2D( u_texture, uv ).rgb;		surfacecolor = pow( surfacecolor, vec3( 2.2 ) );
+                vec3 surfacecolor = texture2D( u_texture, uv ).rgb;
+                surfacecolor = pow( surfacecolor, vec3( 2.2 ) );
 
                 // get the direct light color
                 // from the transmittance of the sun through the atmosphere
