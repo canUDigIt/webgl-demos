@@ -10,7 +10,7 @@
             u_modelViewPerspectiveMatrix: m4.inverse(m4.lookAt(eye, target, [0, 1, 0])),
             u_cameraLightPosition: [1, 1, 0],
             u_cameraEyePosition: eye,
-            u_diffuseSpecularAmbientShininess: [0.9, 0.9, 0.2, 100],
+            u_diffuseSpecularAmbientShininess: [0.9, 0.9, 0.1, 100],
             u_sphereRadius: 1,
             u_oneOverTwoPi: 1.0 / (2 * Math.PI),
             u_oneOverPi: 1.0 / Math.PI

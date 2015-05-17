@@ -390,7 +390,7 @@
                 // finally obtain the aerial perspective of the shaded surface point
                 // from the camera's point of view
                 aerial_perspective( T, S, u_cameraEyePosition, intersection.xyz, false );
-                color = S + T * surfacecolor;
+                color = intensity * (S + T * surfacecolor);
             }
 
             // final tone mapping
