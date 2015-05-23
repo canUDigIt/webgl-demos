@@ -8,7 +8,7 @@
         programInfo = {},
         uniforms = {
             u_modelViewPerspectiveMatrix: m4.inverse(m4.lookAt(eye, target, [0, 1, 0])),
-            u_cameraLightPosition: [1, 1, 0],
+            u_cameraLightPosition: [2, 2, 0],
             u_cameraEyePosition: eye,
             u_diffuseSpecularAmbientShininess: [0.9, 0.9, 0.1, 100],
             u_sphereRadius: 1,
@@ -44,7 +44,9 @@
 
     function load() {
         sphereBufferInfo = twgl.primitives.createCubeBufferInfo(gl, 2.0);
-        uniforms.u_texture = twgl.createTexture(gl, { src: "images/2_no_clouds_4k.jpg" });
+        //uniforms.u_texture = twgl.createTexture(gl, { src: "images/2_no_clouds_4k.jpg" });
+        uniforms.earthcolor = twgl.createTexture(gl, { src: "images/earthcolor.jpg" });
+        uniforms.oceanmask = twgl.createTexture(gl, { src: "images/oceanmask.jpg" });
     }
 
     function render() {

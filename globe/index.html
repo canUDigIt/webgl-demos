@@ -38,7 +38,9 @@
     <script id="shader-fs" type="x-shader/x-fragment">
         precision highp float;
 
-        uniform sampler2D u_texture;
+        uniform sampler2D earthcolor;
+        uniform sampler2D oceanmask;
+
         uniform vec4 u_diffuseSpecularAmbientShininess;
         uniform vec3 u_cameraEyePosition;
         uniform mediump float u_sphereRadius;
@@ -58,7 +60,7 @@
         // basic parameters
         float top = 1.011;							// atmosphere top (up to 70 km)
         float H = 0.00119;							// density scale-height of atmosphere (not pressure scale height)
-        vec3 L = u_cameraEyePosition;
+        vec3 L = positionToLight;
 
         // Rayleigh extinction coefficients,
         // calculated for a nitrogen gas (polarizability 1.82e-30)
@@ -352,7 +354,6 @@
             }
             else
             {
-                vec3 T, S;
                 float oneOverRadiiSquared = 1.0 / (u_sphereRadius * u_sphereRadius);
                 vec3 oneOverEllipsoidRadiiSquared =
                     vec3(
@@ -375,7 +376,7 @@
 
                 // sample the surface texture and
                 // apply inverse gamma 2.2 conversion to the color
-                vec3 surfacecolor = texture2D( u_texture, uv ).rgb;
+                vec3 surfacecolor = texture2D( earthcolor, uv ).rgb;
                 surfacecolor = pow( surfacecolor, vec3( 2.2 ) );
 
                 // get the direct light color
@@ -386,12 +387,33 @@
                 vec3 V = -viewdir;
                 float dotNV = max( 0., dot( N, V ) );
                 float dotNL = max( 0., dot( N, L ) );
-                surfacecolor = lightcolor * surfacecolor * dotNL / (dotNL + dotNV);
+                vec3 landcolor = lightcolor * surfacecolor * dotNL / (dotNL + dotNV);
+
+                // for shading the ocean
+                // we obtain the skycolor reflection
+                // via the aerial perspective of the reflection vector,
+                // and mix it with an approximate fresnel factor
+                vec3 T,S;
+                aerial_perspective( T, S, intersection.xyz, intersection.xyz - reflect( V, N ), true );
+                float fresnel = 1. - dotNV;
+                fresnel *= fresnel;
+                fresnel *= fresnel;
+                vec3 oceancolor = mix( landcolor, S, fresnel );
+
+                // we also add the specular reflection of the sun to the ocean
+                // uses the micro-facet shading model described in ShaderX7
+                vec3 H = normalize( L + V );
+                float dotNH = max( 0., dot( N, H ) );
+                float dotLH = max( 0., dot( L, H ) );
+                oceancolor += lightcolor * 0.02 * ( 32. + 1. ) / ( 8. ) * pow( dotNH, 32. ) / pow( dotLH, 3. ) * dotNL;
+
+                // final shaded surface color
+                surfacecolor = texture2D( oceanmask, uv ).x > 0.45 ? oceancolor : landcolor;
 
                 // finally obtain the aerial perspective of the shaded surface point
                 // from the camera's point of view
                 aerial_perspective( T, S, u_cameraEyePosition, intersection.xyz, false );
-                color = intensity * (S + T * surfacecolor);
+                color = (S + T * surfacecolor);
             }
 
             // final tone mapping
