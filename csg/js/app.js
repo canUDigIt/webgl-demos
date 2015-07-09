@@ -1,5 +1,5 @@
 var scene = new THREE.Scene();
-var camera = new THREE.PerspectiveCamera( 75, 1., 0.1, 1000 );
+var camera = new THREE.PerspectiveCamera( 75, 1, 0.1, 1000 );
 
 var renderer = new THREE.WebGLRenderer();
 renderer.setSize( 400, 400 );
