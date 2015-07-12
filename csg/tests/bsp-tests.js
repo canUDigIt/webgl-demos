@@ -4,6 +4,127 @@ var bsp = require('../js/bsp.js'),
     expect = require('chai').expect,
     THREE = require('three');
 
+describe('Vector', function() {
+    describe('#negate', function() {
+        it('should return the negative of each vector element', function() {
+            var a = [1, 1, 1];
+            expect(bsp.Vector.negate(a)).to.eql([-1, -1, -1]);
+        });
+    });
+    describe('#add', function() {
+        it('should return the component to compnent sum vector', function(){
+            var a = [1, 0, 0];
+            var b = [0, 1, 0];
+            expect(bsp.Vector.add(a, b)).to.eql([1, 1, 0]);
+        });
+    });
+    describe('#sub', function() {
+        it('should return the component to compnent difference vector', function(){
+            var a = [2, 5, 0];
+            var b = [0, 1, 0];
+            expect(bsp.Vector.sub(a, b)).to.eql([2, 4, 0]);
+        });
+    });
+    describe('#dotProduct', function() {
+        it('should return the dot product of two vectors', function() {
+            var a = [1, 0, 1];
+            var b = [1, 2, 3];
+            expect(bsp.Vector.dotProduct(a, b)).to.be.equal(4);
+        });
+
+        it('should return 0 if vectors are perpendicular', function() {
+            var a = [1, 0, 0];
+            var b = [0, 1, 0];
+            expect(bsp.Vector.dotProduct(a, b)).to.be.equal(0);
+        });
+
+        it('should return less than 0 if vectors are obtuse', function() {
+            var a = [1, 0, 0];
+            var b = [-1, 1, 0];
+            expect(bsp.Vector.dotProduct(a, b)).to.be.lessThan(0);
+        });
+
+        it('should return greater than 0 if vectors are acute', function() {
+            var a = [1, 0, 0];
+            var b = [1, 1, 0];
+            expect(bsp.Vector.dotProduct(a, b)).to.be.greaterThan(0);
+        });
+    });
+
+    describe('#crossProduct', function() {
+        it('should return the correct direction and magnitude', function() {
+            var a = [1, 0, 0];
+            var b = [1, 1, 0];
+
+            var sinTheta = Math.sin(Math.PI/4);
+            var v = bsp.Vector.crossProduct(a, b);
+
+            // For whatever reason chai thinks that -0 doesn't equal 0 only in
+            // an array. If I use expect(0).to.equal(-0) that test passes...
+            expect(v).to.eql([0, -0, 1]);
+            expect(bsp.Vector.magnitude(v)).to.equal(bsp.Vector.magnitude(a) * bsp.Vector.magnitude(b) * sinTheta);
+        });
+    });
+
+    describe('#normalize', function() {
+        it('should return a vector of length of 1', function() {
+            var a = [3, 4, 5];
+
+            expect(Math.abs(bsp.Vector.magnitude(bsp.Vector.normalize(a)))).to.closeTo(1, 0.0001);
+        });
+    });
+});
+
+describe('Plane', function() {
+    describe('#createPlane', function(){
+        it('should return a plane computed from three noncolinear points', function() {
+            var a = [0, 0, 3];
+            var b = [1, 0, 3];
+            var c = [0, 1, 3];
+
+            var plane = bsp.Plane.createPlane(a, b, c);
+
+            expect(plane).to.be.instanceof(bsp.Plane);
+            expect(plane.normal).to.eql([0, -0, 1]);
+            expect(plane.d).to.equal(3);
+        });
+    });
+
+    describe('#distance', function() {
+        it('should return 0 for all points on plane', function() {
+            var a = [0, 0, 3];
+            var b = [1, 0, 3];
+            var c = [0, 1, 3];
+
+            var plane = bsp.Plane.createPlane(a, b, c);
+
+            expect(plane.distance(a)).to.equal(0);
+            expect(plane.distance(b)).to.equal(0);
+            expect(plane.distance(c)).to.equal(0);
+        });
+
+        it('should return a positive value when points are in front of the plane', function() {
+            var a = [0, 0, 3];
+            var b = [1, 0, 3];
+            var c = [0, 1, 3];
+
+            var plane = bsp.Plane.createPlane(a, b, c);
+
+            expect(plane.distance([1, 2, 5])).to.be.greaterThan(0);
+        });
+
+        it('should return a negative value when points are behind the plane', function() {
+            var a = [0, 0, 3];
+            var b = [1, 0, 3];
+            var c = [0, 1, 3];
+
+            var plane = bsp.Plane.createPlane(a, b, c);
+
+            expect(plane.distance([1, 2, -3])).to.be.lessThan(0);
+        });
+    });
+});
+
 describe('SolidBSP', function() {
     describe('#polygonsFromThreeJsGeometry', function() {
         it('should return a polygon for each face', function() {
@@ -32,9 +153,9 @@ describe('SolidBSP', function() {
 
     });
 
-    describe('#planesInside()', function(){
-        it('should return a list of polygons inside the BSP', function(){
-            expect(false).to.be.ok;
+    describe('#classifyPolygon()', function(){
+        it('should return 1 if in front of the plane', function(){
+            expect(bsp.classifyPoint(rootNode, [0, 0, 0])).to.equal(1);
         });
     });
 });
