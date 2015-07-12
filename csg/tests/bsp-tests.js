@@ -76,14 +76,21 @@ describe('Vector', function() {
 });
 
 describe('Plane', function() {
+    var plane = null,
+        a = undefined,
+        b = undefined,
+        c = undefined;
+
+    before(function() {
+        a = [0, 0, 3];
+        b = [1, 0, 3];
+        c = [0, 1, 3];
+
+        plane = bsp.Plane.createPlane(a, b, c);
+    });
+
     describe('#createPlane', function(){
         it('should return a plane computed from three noncolinear points', function() {
-            var a = [0, 0, 3];
-            var b = [1, 0, 3];
-            var c = [0, 1, 3];
-
-            var plane = bsp.Plane.createPlane(a, b, c);
-
             expect(plane).to.be.instanceof(bsp.Plane);
             expect(plane.normal).to.eql([0, -0, 1]);
             expect(plane.d).to.equal(3);
@@ -92,44 +99,32 @@ describe('Plane', function() {
 
     describe('#distance', function() {
         it('should return 0 for all points on plane', function() {
-            var a = [0, 0, 3];
-            var b = [1, 0, 3];
-            var c = [0, 1, 3];
-
-            var plane = bsp.Plane.createPlane(a, b, c);
-
             expect(plane.distance(a)).to.equal(0);
             expect(plane.distance(b)).to.equal(0);
             expect(plane.distance(c)).to.equal(0);
         });
 
         it('should return a positive value when points are in front of the plane', function() {
-            var a = [0, 0, 3];
-            var b = [1, 0, 3];
-            var c = [0, 1, 3];
-
-            var plane = bsp.Plane.createPlane(a, b, c);
-
             expect(plane.distance([1, 2, 5])).to.be.greaterThan(0);
         });
 
         it('should return a negative value when points are behind the plane', function() {
-            var a = [0, 0, 3];
-            var b = [1, 0, 3];
-            var c = [0, 1, 3];
-
-            var plane = bsp.Plane.createPlane(a, b, c);
-
             expect(plane.distance([1, 2, -3])).to.be.lessThan(0);
         });
     });
 });
 
 describe('SolidBSP', function() {
+    var box = null,
+        polygons = undefined;
+
+    before(function() {
+        box = new THREE.BoxGeometry(1, 1, 0);
+        polygons = bsp.polygonsFromThreeJsGeometry(box);
+    });
+
     describe('#polygonsFromThreeJsGeometry', function() {
         it('should return a polygon for each face', function() {
-            var box = new THREE.BoxGeometry(1, 1, 0);
-            var polygons = bsp.polygonsFromThreeJsGeometry(box);
             expect(polygons).to.have.length(box.faces.length);
             polygons.forEach(function(polygon, index) {
                 expect(polygon).to.be.instanceof(bsp.Polygon);
@@ -145,8 +140,6 @@ describe('SolidBSP', function() {
 
     describe('#createFromPolygons()', function(){
         it('should return a BSP tree that contains all the polygons', function() {
-            var box = new THREE.BoxGeometry(1, 1, 0);
-            var polygons = bsp.polygonsFromThreeJsGeometry(box);
             var rootNode = bsp.createFromPolygons(polygons);
             expect(bsp.allPolygons(rootNode)).to.equal(polygons);
         });
