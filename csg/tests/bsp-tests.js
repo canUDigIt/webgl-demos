@@ -77,9 +77,9 @@ describe('Vector', function() {
 
 describe('Plane', function() {
     var plane = null,
-        a = undefined,
-        b = undefined,
-        c = undefined;
+        a,
+        b,
+        c;
 
     before(function() {
         a = [0, 0, 3];
@@ -116,7 +116,7 @@ describe('Plane', function() {
 
 describe('SolidBSP', function() {
     var box = null,
-        polygons = undefined;
+        polygons;
 
     before(function() {
         box = new THREE.BoxGeometry(1, 1, 0);
