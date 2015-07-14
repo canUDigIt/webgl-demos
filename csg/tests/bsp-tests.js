@@ -147,8 +147,28 @@ describe('SolidBSP', function() {
     });
 
     describe('#classifyPolygon()', function(){
-        it('should return 1 if in front of the plane', function(){
-            expect(bsp.classifyPoint(rootNode, [0, 0, 0])).to.equal(1);
+        it('should return "front" if in front of the plane', function(){
+            var polygon = new bsp.Polygon([-1, 1, 0], [1, 0, 0],  [3, 1, 0], [0, 0, 1]);
+            var plane = new bsp.Plane([0, 1, 0], 0);
+            expect(bsp.classifyPolygon(polygon, plane)).to.equal("front");
+        });
+
+        it('should return "behind" if behind the plane', function(){
+            var polygon = new bsp.Polygon([-1, -1, 0], [1, -3, 0],  [3, -1, 0], [0, 0, 1]);
+            var plane = new bsp.Plane([0, 1, 0], 0);
+            expect(bsp.classifyPolygon(polygon, plane)).to.equal("behind");
+        });
+
+        it('should return "straddle" if straddling the plane', function(){
+            var polygon = new bsp.Polygon([-1, 1, 0], [1, -1, 0],  [3, 1, 0], [0, 0, 1]);
+            var plane = new bsp.Plane([0, 1, 0], 0);
+            expect(bsp.classifyPolygon(polygon, plane)).to.equal("straddle");
+        });
+
+        it('should return "coplanar" if coplanar to the plane', function() {
+            var polygon = new bsp.Polygon([-1, 0, 0], [1, 0, 1],  [3, 0, 0], [0, 0, -1]);
+            var plane = new bsp.Plane([0, 1, 0], 0);
+            expect(bsp.classifyPolygon(polygon, plane)).to.equal("coplanar");
         });
     });
 });

@@ -53,6 +53,20 @@ module.exports = (function(){
         return Vector.dotProduct(this.normal, u) - this.d;
     }
 
+    function classifyPointToPlane(point, plane, e) {
+        var distance = plane.distance(point);
+
+        if (distance > e) {
+            return 1;   // in front of plane
+        }
+
+        if (distance < -e) {
+            return -1;
+        }
+
+        return 0;
+    }
+
     function Polygon(a, b, c, normal){
         this.a = a;
         this.b = b;
@@ -90,7 +104,61 @@ module.exports = (function(){
         },
 
         classifyPolygon : function(polygon, plane) {
-            return 0;
-        },
+            var numberInFront = 0,
+                numberBehind = 0;
+
+            switch( classifyPointToPlane(polygon.a, plane, 0.1) )
+            {
+                case 1:
+                    numberInFront++;
+                    break;
+
+                case -1:
+                    numberBehind++;
+                    break;
+
+                default:
+            };
+
+            switch( classifyPointToPlane(polygon.b, plane, 0.1) )
+            {
+                case 1:
+                    numberInFront++;
+                    break;
+
+                case -1:
+                    numberBehind++;
+                    break;
+                    
+                default:
+            };
+
+            switch( classifyPointToPlane(polygon.c, plane, 0.1) )
+            {
+                case 1:
+                    numberInFront++;
+                    break;
+
+                case -1:
+                    numberBehind++;
+                    break;
+                    
+                default:
+            };
+
+            if (numberInFront != 0 && numberBehind != 0) {
+                return "straddle";
+            }
+
+            if (numberInFront != 0) {
+                return "front";
+            }
+
+            if (numberBehind != 0) {
+                return "behind";
+            }
+
+            return "coplanar";
+        }
     };
 })();
