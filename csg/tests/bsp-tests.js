@@ -86,7 +86,7 @@ describe('Plane', function() {
         b = { x:1, y:0, z:3 };
         c = { x:0, y:1, z:3 };
 
-        plane = bsp.Plane.createPlane(a, b, c);
+        plane = bsp.Plane.createPlaneFromThreePoints(a, b, c);
     });
 
     describe('#createPlane', function(){
@@ -119,7 +119,7 @@ describe('SolidBSP', function() {
         polygons;
 
     before(function() {
-        box = new THREE.BoxGeometry(1, 1, 0);
+        box = new THREE.BoxGeometry(1, 1, 1);
         polygons = bsp.polygonsFromThreeJsGeometry(box);
     });
 
@@ -135,20 +135,6 @@ describe('SolidBSP', function() {
                 expect(polygon.c).to.be.equal(box.vertices[face.c]);
                 expect(polygon.normal).to.be.equal(face.normal);
             });
-        });
-    });
-
-    describe('#isPointInside()', function() {
-        it('should return true if a point is inside solid space', function() {
-            var rootNode = bsp.createFromPolygons(polygons);
-            var point = { x:0, y:0, z:0 };
-            expect(bsp.isPointInside(point, rootNode)).to.be.true;
-        });
-
-        it('should return false when a point is outside of solid space', function() {
-            var rootNode = bsp.createFromPolygons(polygons);
-            var point = { x:2, y:2, z:2 };
-            expect(bsp.isPointInside(point, rootNode)).to.be.false;
         });
     });
 
@@ -175,6 +161,20 @@ describe('SolidBSP', function() {
             var polygon = new bsp.Polygon({ x:-1, y:0, z:0 }, { x:1, y:0, z:1 },  { x:3, y:0, z:0 }, { x:0, y:0, z:-1 });
             var plane = new bsp.Plane({ x:0, y:1, z:0 }, 0);
             expect(bsp.classifyPolygon(polygon, plane)).to.equal("coplanar");
+        });
+    });
+
+    describe('#isPointInside()', function() {
+        it('should return true if a point is inside solid space', function() {
+            var rootNode = bsp.createFromPolygons(polygons);
+            var point = { x:0, y:0, z:0 };
+            expect(bsp.isPointInside(point, rootNode)).to.be.true;
+        });
+
+        it('should return false when a point is outside of solid space', function() {
+            var rootNode = bsp.createFromPolygons(polygons);
+            var point = { x:2, y:2, z:2 };
+            expect(bsp.isPointInside(point, rootNode)).to.be.false;
         });
     });
 });

@@ -30,7 +30,7 @@ module.exports = (function(){
         this.d = d;
     }
 
-    Plane.createPlane = function(a, b, c) {
+    Plane.createPlaneFromThreePoints = function(a, b, c) {
         var n = Vector.normalize(
             Vector.crossProduct(
                 Vector.sub(b, a),
@@ -40,6 +40,11 @@ module.exports = (function(){
         d = Vector.dotProduct(n, a);
 
         return new Plane(n, d);
+    };
+
+    Plane.createPlaneFromPolygon = function(polygon) {
+        var d = Vector.dotProduct(polygon.normal, polygon.a);
+        return new Plane(polygon.normal, d);
     };
 
     Plane.prototype.distance = function(u) {
@@ -73,7 +78,7 @@ module.exports = (function(){
             return null;
         }
         var first = polygons.shift();
-        return Plane.createPlane(first.a, first.b, first.c);
+        return Plane.createPlaneFromPolygon(first);
     }
     function BSPNode(plane, leaf, solid) {
         this.plane = plane;
@@ -96,7 +101,7 @@ module.exports = (function(){
             return node.isSolid();
         }
         else {
-            var classification = classifyPointToPlane(point, node.plane);
+            var classification = classifyPointToPlane(point, node.plane, 0.1);
             if (classification == 1) {
                 return isPointInside(point, node.front);
             }
@@ -110,7 +115,7 @@ module.exports = (function(){
         if (polygons.length === 0) return node;
 
         if (polygons.length === 1) {
-            node = new BSPNode(Plane.createPlane(polygons[0].a, polygons[0].b, polygons[0].c), false, false);
+            node = new BSPNode(Plane.createPlaneFromPolygon(polygons[0]), false, false);
             node.front = new BSPNode(null, true, false);
             node.back = new BSPNode(null, true, true);
             return node;
@@ -128,7 +133,7 @@ module.exports = (function(){
                     frontList.push(polygon);
                     break;
 
-                case "back":
+                case "behind":
                     backList.push(polygon);
                     break;
 
@@ -235,10 +240,6 @@ module.exports = (function(){
         },
 
         createFromPolygons : createFromPolygons,
-
-        allPolygons : function(node) {
-            return node.polygons;
-        },
 
         classifyPolygon : classifyPolygon,
 
