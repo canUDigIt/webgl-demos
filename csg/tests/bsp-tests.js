@@ -1,6 +1,6 @@
 /*jshint expr: true*/
 
-var bsp = require('../js/bsp.js'),
+var bsp = require('../js/lib/bsp.js'),
     expect = require('chai').expect,
     THREE = require('three');
 
