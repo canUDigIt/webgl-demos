@@ -72,6 +72,16 @@ module.exports = (function(){
         this.normal = normal;
     }
 
+    function polygonsFromThreeJsGeometry(geometry) {
+        return geometry.faces.map(function(face) {
+            return new Polygon(
+                geometry.vertices[face.a],
+                geometry.vertices[face.b],
+                geometry.vertices[face.c],
+                face.normal);
+        });
+    }
+
     function selectSplittingPlane(polygons)
     {
         if (polygons.length === 0) {
@@ -80,6 +90,7 @@ module.exports = (function(){
         var first = polygons.shift();
         return Plane.createPlaneFromPolygon(first);
     }
+
     function BSPNode(plane, leaf, solid) {
         this.plane = plane;
         this.leaf = leaf;
@@ -229,15 +240,7 @@ module.exports = (function(){
 
         Polygon : Polygon,
 
-        polygonsFromThreeJsGeometry : function(geometry) {
-            return geometry.faces.map(function(face) {
-                return new Polygon(
-                    geometry.vertices[face.a], 
-                    geometry.vertices[face.b], 
-                    geometry.vertices[face.c], 
-                    face.normal);
-            });
-        },
+        polygonsFromThreeJsGeometry : polygonsFromThreeJsGeometry,
 
         createFromPolygons : createFromPolygons,
 
