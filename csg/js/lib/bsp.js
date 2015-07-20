@@ -51,6 +51,10 @@ module.exports = (function(){
         return Vector.dotProduct(this.normal, u) - this.d;
     };
 
+    Plane.prototype.splitPolygon = function(polygon, outFrontPolygon, outBackPolygon) {
+
+    };
+
     function classifyPointToPlane(point, plane, e) {
         var distance = plane.distance(point);
 

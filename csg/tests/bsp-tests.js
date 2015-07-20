@@ -112,6 +112,35 @@ describe('Plane', function() {
             expect(plane.distance({ x:1, y:2, z:-3 })).to.be.lessThan(0);
         });
     });
+
+    describe('#splitPolygon', function() {
+        it('should return two polygons, one in front and one behind, when a polygon straddles the plane', function() {
+            var frontPolygon,
+                backPolygon,
+                a = { x: 0, y: 2, z: 0 },
+                b = { x: 3, y: -1, z: 0 },
+                c = { x: 6, y: 2, z: 0 },
+                intersection = { x: 3, y: 2, z: 0 },
+                plane = new bsp.Plane({ x: 1, y: 0, z: 0 }, 3),
+                polygon = new bsp.Polygon(a, b, c, { x: 0, y: 0, z: 1 });
+
+            plane.splitPolygon(polygon, frontPolygon, backPolygon);
+
+            expect(frontPolygon).to.equal({
+                a: intersection,
+                b: a,
+                c: b,
+                normal: { x: 0, y: 0, z: 1 }
+            });
+
+            expect(backPolygon).to.equal({
+                a: intersection,
+                b: b,
+                c: c,
+                normal: { x: 0, y: 0, z: 1 }
+            });
+        });
+    })
 });
 
 describe('SolidBSP', function() {
