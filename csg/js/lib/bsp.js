@@ -4,6 +4,9 @@ module.exports = (function(){
         negate : function(u) {
             return { x: -u.x, y: -u.y, z: -u.z };
         },
+        multiplyScalar : function(u, scalar) {
+            return { x: scalar * u.x, y: scalar * u.y, z: scalar * u.z };
+        },
         add : function(u, v) {
             return { x: u.x + v.x, y: u.y + v.y, z: u.z + v.z };
         },
@@ -52,7 +55,71 @@ module.exports = (function(){
     };
 
     Plane.prototype.splitPolygon = function(polygon, outFrontPolygon, outBackPolygon) {
+        var frontVertices = [],
+            backVertices = [];
 
+        var getFrontAndBackVerticesFromEdge = function(previous, current, plane) {
+            var previousSide = classifyPointToPlane(previous, plane, 0.1),
+                currentSide = classifyPointToPlane(current, plane, 0.1),
+                intersection;
+
+            var intersectLineSegmentAgainstPlane = function (a, b, plane) {
+                var ab = Vector.sub(b, a),
+                    t = (plane.d - Vector.dotProduct(plane.normal, a) ) / Vector.dotProduct(plane.normal, ab);
+
+                if(t >= 0.0 && t <= 1.0) {
+                    return Vector.add(a, Vector.multiplyScalar(ab, t));
+                }
+
+                return null;
+            };
+
+            if( currentSide === 1 ) {
+                if ( previousSide === -1 ) {
+                    intersection = intersectLineSegmentAgainstPlane(previous, current, plane); // intersect back to front
+                    console.assert(classifyPointToPlane(intersection, plane, 0.1) === 0, "Intersection point isn't on plane!!!");
+                    frontVertices.push(intersection);
+                    backVertices.push(intersection);
+                }
+
+                frontVertices.push(current);
+            }
+            else if( currentSide === -1 ) {
+                if( previousSide === 1) {
+                    intersection = intersectLineSegmentAgainstPlane(current, previous, plane); // intersect back to front
+                    console.assert(classifyPointToPlane(intersection, plane, 0.1) === 0, "Intersection point isn't on plane!!!");
+                    frontVertices.push(intersection);
+                    backVertices.push(intersection);
+                }
+                else if( previousSide === 0 ) {
+                    backVertices.push(previous);
+                }
+
+                backVertices.push(current);
+            }
+            else {
+                frontVertices.push(current);
+
+                if( previousSide === -1 ) {
+                    backVertices.push(current);
+                }
+            }
+
+        };
+
+        getFrontAndBackVerticesFromEdge(polygon.c, polygon.a, this);
+        getFrontAndBackVerticesFromEdge(polygon.a, polygon.b, this);
+        getFrontAndBackVerticesFromEdge(polygon.b, polygon.c, this);
+
+        outFrontPolygon.a = frontVertices[0];
+        outFrontPolygon.b = frontVertices[1];
+        outFrontPolygon.c = frontVertices[2];
+        outFrontPolygon.normal = polygon.normal;
+
+        outBackPolygon.a = backVertices[0];
+        outBackPolygon.b = backVertices[1];
+        outBackPolygon.c = backVertices[2];
+        outBackPolygon.normal = polygon.normal;
     };
 
     function classifyPointToPlane(point, plane, e) {
@@ -63,13 +130,13 @@ module.exports = (function(){
         }
 
         if (distance < -e) {
-            return -1;
+            return -1;  // behind
         }
 
         return 0;
     }
 
-    function Polygon(a, b, c, normal){
+    function Triangle(a, b, c, normal){
         this.a = a;
         this.b = b;
         this.c = c;
@@ -78,7 +145,7 @@ module.exports = (function(){
 
     function polygonsFromThreeJsGeometry(geometry) {
         return geometry.faces.map(function(face) {
-            return new Polygon(
+            return new Triangle(
                 geometry.vertices[face.a],
                 geometry.vertices[face.b],
                 geometry.vertices[face.c],
@@ -153,7 +220,7 @@ module.exports = (function(){
                     break;
 
                 case "straddle":
-                    var result = splitPolygon(polygon);
+                    var result = splitPlane.splitPolygon(polygon);
                     frontList.push(result.front);
                     backList.push(result.back);
                     break;
@@ -242,7 +309,7 @@ module.exports = (function(){
 
         Plane: Plane,
 
-        Polygon : Polygon,
+        Triangle : Triangle,
 
         polygonsFromThreeJsGeometry : polygonsFromThreeJsGeometry,
 

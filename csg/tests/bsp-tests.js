@@ -115,32 +115,32 @@ describe('Plane', function() {
 
     describe('#splitPolygon', function() {
         it('should return two polygons, one in front and one behind, when a polygon straddles the plane', function() {
-            var frontPolygon,
-                backPolygon,
+            var frontPolygon = {},
+                backPolygon = {},
                 a = { x: 0, y: 2, z: 0 },
                 b = { x: 3, y: -1, z: 0 },
                 c = { x: 6, y: 2, z: 0 },
                 intersection = { x: 3, y: 2, z: 0 },
                 plane = new bsp.Plane({ x: 1, y: 0, z: 0 }, 3),
-                polygon = new bsp.Polygon(a, b, c, { x: 0, y: 0, z: 1 });
+                polygon = new bsp.Triangle(a, b, c, { x: 0, y: 0, z: 1 });
 
             plane.splitPolygon(polygon, frontPolygon, backPolygon);
 
-            expect(frontPolygon).to.equal({
+            expect(backPolygon).to.eql({
                 a: intersection,
                 b: a,
                 c: b,
                 normal: { x: 0, y: 0, z: 1 }
             });
 
-            expect(backPolygon).to.equal({
+            expect(frontPolygon).to.eql({
                 a: intersection,
                 b: b,
                 c: c,
                 normal: { x: 0, y: 0, z: 1 }
             });
         });
-    })
+    });
 });
 
 describe('SolidBSP', function() {
@@ -156,7 +156,7 @@ describe('SolidBSP', function() {
         it('should return a polygon for each face', function() {
             expect(polygons).to.have.length(box.faces.length);
             polygons.forEach(function(polygon, index) {
-                expect(polygon).to.be.instanceof(bsp.Polygon);
+                expect(polygon).to.be.instanceof(bsp.Triangle);
 
                 var face = box.faces[index];
                 expect(polygon.a).to.be.equal(box.vertices[face.a]);
@@ -169,25 +169,25 @@ describe('SolidBSP', function() {
 
     describe('#classifyPolygon()', function() {
         it('should return "front" if in front of the plane', function(){
-            var polygon = new bsp.Polygon({ x:-1, y:1, z:0 }, { x:1, y:0, z:0 },  { x:3, y:1, z:0 }, { x:0, y:0, z:1 });
+            var polygon = new bsp.Triangle({ x:-1, y:1, z:0 }, { x:1, y:0, z:0 },  { x:3, y:1, z:0 }, { x:0, y:0, z:1 });
             var plane = new bsp.Plane({ x:0, y:1, z:0 }, 0);
             expect(bsp.classifyPolygon(polygon, plane)).to.equal("front");
         });
 
         it('should return "behind" if behind the plane', function(){
-            var polygon = new bsp.Polygon({ x:-1, y:-1, z:0 }, { x:1, y:-3, z:0 },  { x:3, y:-1, z:0 }, { x:0, y:0, z:1 });
+            var polygon = new bsp.Triangle({ x:-1, y:-1, z:0 }, { x:1, y:-3, z:0 },  { x:3, y:-1, z:0 }, { x:0, y:0, z:1 });
             var plane = new bsp.Plane({ x:0, y:1, z:0 }, 0);
             expect(bsp.classifyPolygon(polygon, plane)).to.equal("behind");
         });
 
         it('should return "straddle" if straddling the plane', function(){
-            var polygon = new bsp.Polygon({ x:-1, y:1, z:0 }, { x:1, y:-1, z:0 },  { x:3, y:1, z:0 }, { x:0, y:0, z:1 });
+            var polygon = new bsp.Triangle({ x:-1, y:1, z:0 }, { x:1, y:-1, z:0 },  { x:3, y:1, z:0 }, { x:0, y:0, z:1 });
             var plane = new bsp.Plane({ x:0, y:1, z:0 }, 0);
             expect(bsp.classifyPolygon(polygon, plane)).to.equal("straddle");
         });
 
         it('should return "coplanar" if coplanar to the plane', function() {
-            var polygon = new bsp.Polygon({ x:-1, y:0, z:0 }, { x:1, y:0, z:1 },  { x:3, y:0, z:0 }, { x:0, y:0, z:-1 });
+            var polygon = new bsp.Triangle({ x:-1, y:0, z:0 }, { x:1, y:0, z:1 },  { x:3, y:0, z:0 }, { x:0, y:0, z:-1 });
             var plane = new bsp.Plane({ x:0, y:1, z:0 }, 0);
             expect(bsp.classifyPolygon(polygon, plane)).to.equal("coplanar");
         });
