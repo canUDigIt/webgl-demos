@@ -1,32 +1,6 @@
 module.exports = (function(){
 
-    var Vector = {
-        negate : function(u) {
-            return { x: -u.x, y: -u.y, z: -u.z };
-        },
-        multiplyScalar : function(u, scalar) {
-            return { x: scalar * u.x, y: scalar * u.y, z: scalar * u.z };
-        },
-        add : function(u, v) {
-            return { x: u.x + v.x, y: u.y + v.y, z: u.z + v.z };
-        },
-        sub : function(u, v) {
-            return this.add(u, this.negate(v));
-        },
-        dotProduct : function(u, v) {
-            return u.x*v.x + u.y*v.y + u.z*v.z;
-        },  
-        crossProduct : function(u, v) {
-            return { x: u.y*v.z - u.z*v.y, y: -(u.x*v.z - u.z*v.x), z: u.x*v.y - u.y*v.x };
-        },
-        magnitude : function(u) {
-            return Math.sqrt(this.dotProduct(u, u));
-        },
-        normalize : function(u) {
-            var mag = this.magnitude(u);
-            return {x: u.x/mag, y: u.y/mag, z: u.z/mag};
-        }
-    };
+    var vector = require('./vector.js');
 
     function Plane(n, d) {
         this.normal = n;
@@ -34,24 +8,24 @@ module.exports = (function(){
     }
 
     Plane.createPlaneFromThreePoints = function(a, b, c) {
-        var n = Vector.normalize(
-            Vector.crossProduct(
-                Vector.sub(b, a),
-                Vector.sub(c, a)
+        var n = vector.normalize(
+            vector.crossProduct(
+                vector.sub(b, a),
+                vector.sub(c, a)
             )
         ),
-        d = Vector.dotProduct(n, a);
+        d = vector.dotProduct(n, a);
 
         return new Plane(n, d);
     };
 
     Plane.createPlaneFromPolygon = function(polygon) {
-        var d = Vector.dotProduct(polygon.normal, polygon.a);
+        var d = vector.dotProduct(polygon.normal, polygon.a);
         return new Plane(polygon.normal, d);
     };
 
     Plane.prototype.distance = function(u) {
-        return Vector.dotProduct(this.normal, u) - this.d;
+        return vector.dotProduct(this.normal, u) - this.d;
     };
 
     Plane.prototype.splitPolygon = function(polygon, outFrontPolygon, outBackPolygon) {
@@ -64,11 +38,11 @@ module.exports = (function(){
                 intersection;
 
             var intersectLineSegmentAgainstPlane = function (a, b, plane) {
-                var ab = Vector.sub(b, a),
-                    t = (plane.d - Vector.dotProduct(plane.normal, a) ) / Vector.dotProduct(plane.normal, ab);
+                var ab = vector.sub(b, a),
+                    t = (plane.d - vector.dotProduct(plane.normal, a) ) / vector.dotProduct(plane.normal, ab);
 
                 if(t >= 0.0 && t <= 1.0) {
-                    return Vector.add(a, Vector.multiplyScalar(ab, t));
+                    return vector.add(a, vector.multiplyScalar(ab, t));
                 }
 
                 return null;
@@ -305,7 +279,6 @@ module.exports = (function(){
     }
 
     return {
-        Vector : Vector,
 
         Plane: Plane,
 

@@ -1,6 +1,7 @@
 /*jshint expr: true*/
 
 var bsp = require('../js/lib/bsp.js'),
+    vector = require('../js/lib/vector.js'),
     expect = require('chai').expect,
     THREE = require('three');
 
@@ -8,46 +9,46 @@ describe('Vector', function() {
     describe('#negate', function() {
         it('should return the negative of each vector element', function() {
             var a = { x:1, y:1, z:1 };
-            expect(bsp.Vector.negate(a)).to.eql({ x: -1, y: -1, z: -1 });
+            expect(vector.negate(a)).to.eql({ x: -1, y: -1, z: -1 });
         });
     });
     describe('#add', function() {
         it('should return the component to compnent sum vector', function(){
             var a = { x:1, y:0, z:0 };
             var b = { x:0, y:1, z:0 };
-            expect(bsp.Vector.add(a, b)).to.eql({ x: 1, y: 1, z: 0 });
+            expect(vector.add(a, b)).to.eql({ x: 1, y: 1, z: 0 });
         });
     });
     describe('#sub', function() {
         it('should return the component to compnent difference vector', function(){
             var a = { x:2, y:5, z:0 };
             var b = { x:0, y:1, z:0 };
-            expect(bsp.Vector.sub(a, b)).to.eql({ x: 2, y: 4, z: 0 });
+            expect(vector.sub(a, b)).to.eql({ x: 2, y: 4, z: 0 });
         });
     });
     describe('#dotProduct', function() {
         it('should return the dot product of two vectors', function() {
             var a = { x:1, y:0, z:1 };
             var b = { x:1, y:2, z:3 };
-            expect(bsp.Vector.dotProduct(a, b)).to.be.equal(4);
+            expect(vector.dotProduct(a, b)).to.be.equal(4);
         });
 
         it('should return 0 if vectors are perpendicular', function() {
             var a = { x:1, y:0, z:0 };
             var b = { x:0, y:1, z:0 };
-            expect(bsp.Vector.dotProduct(a, b)).to.be.equal(0);
+            expect(vector.dotProduct(a, b)).to.be.equal(0);
         });
 
         it('should return less than 0 if vectors are obtuse', function() {
             var a = { x:1, y:0, z:0 };
             var b = { x:-1, y:1, z:0 };
-            expect(bsp.Vector.dotProduct(a, b)).to.be.lessThan(0);
+            expect(vector.dotProduct(a, b)).to.be.lessThan(0);
         });
 
         it('should return greater than 0 if vectors are acute', function() {
             var a = { x:1, y:0, z:0 };
             var b = { x:1, y:1, z:0 };
-            expect(bsp.Vector.dotProduct(a, b)).to.be.greaterThan(0);
+            expect(vector.dotProduct(a, b)).to.be.greaterThan(0);
         });
     });
 
@@ -57,12 +58,12 @@ describe('Vector', function() {
             var b = { x:1, y:1, z:0 };
 
             var sinTheta = Math.sin(Math.PI/4);
-            var v = bsp.Vector.crossProduct(a, b);
+            var v = vector.crossProduct(a, b);
 
             // For whatever reason chai thinks that -0 doesn't equal 0 only in
             // an array. If I use expect(0).to.equal(-0) that test passes...
             expect(v).to.eql({ x:0, y:-0, z:1 });
-            expect(bsp.Vector.magnitude(v)).to.equal(bsp.Vector.magnitude(a) * bsp.Vector.magnitude(b) * sinTheta);
+            expect(vector.magnitude(v)).to.equal(vector.magnitude(a) * vector.magnitude(b) * sinTheta);
         });
     });
 
@@ -70,7 +71,7 @@ describe('Vector', function() {
         it('should return a vector of length of 1', function() {
             var a = { x:3, y:4, z:5 };
 
-            expect(Math.abs(bsp.Vector.magnitude(bsp.Vector.normalize(a)))).to.closeTo(1, 0.0001);
+            expect(Math.abs(vector.magnitude(vector.normalize(a)))).to.closeTo(1, 0.0001);
         });
     });
 });
