@@ -147,7 +147,7 @@ describe('Plane', function() {
 
 describe('SolidBSP', function() {
     var box = null,
-        polygons;
+        polygons = [];
 
     before(function() {
         box = new THREE.BoxGeometry(1, 1, 1);
@@ -197,15 +197,34 @@ describe('SolidBSP', function() {
 
     describe('#isPointInside()', function() {
         it('should return true if a point is inside solid space', function() {
-            var rootNode = bsp.createFromPolygons(polygons);
+            var rootNode = bsp.createFromPolygons(polygons.slice());
             var point = { x:0, y:0, z:0 };
             expect(bsp.isPointInside(point, rootNode)).to.be.true;
         });
 
         it('should return false when a point is outside of solid space', function() {
-            var rootNode = bsp.createFromPolygons(polygons);
+            var rootNode = bsp.createFromPolygons(polygons.slice());
             var point = { x:2, y:2, z:2 };
             expect(bsp.isPointInside(point, rootNode)).to.be.false;
+        });
+    });
+
+    describe('#classifyBrush()', function() {
+        it('should return the expected inside, outside, touching aligned, and touching inversed', function() {
+            var otherBox = new THREE.BoxGeometry(1, 1, 1),
+                translationMat4 = new THREE.Matrix4();
+            translationMat4.makeTranslation(0.5, 0, 0);
+            otherBox.applyMatrix(translationMat4);
+            var otherPolygons = bsp.polygonsFromThreeJsGeometry(otherBox);
+
+            var brush = bsp.createFromPolygons(polygons.slice());
+            var otherBrush = bsp.createFromPolygons(otherPolygons);
+
+            var results = brush.classifyBrush(otherBrush);
+
+            expect(results.inside).to.have.length(2);
+            expect(results.outside).to.have.length(10);
+            expect(results.touchingAligned).to.have.length(8);
         });
     });
 });
