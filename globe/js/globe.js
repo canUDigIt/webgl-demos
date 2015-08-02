@@ -26,7 +26,7 @@
         lightTheta = Math.atan2(lightPos[0], lightPos[2]),
         lightPhi = Math.atan2(Math.sqrt(lightPos[0] * lightPos[0] + lightPos[2] * lightPos[2]), lightPos[1]),
         lightThetaDelta = 0,
-        lightPhiDelta = 0
+        lightPhiDelta = 0,
         maxLightTheta = 2 * Math.PI,
         minLightTheta = 0,
         minLightPhi = -Math.PI / 2.0,
@@ -50,6 +50,9 @@
             event.preventDefault();
             updateLight = true;
         });
+
+        canvas.addEventListener("webglcontextlost", handleContextLost);
+        canvas.addEventListener("webglcontextrestored", handleContextRestored);
 
         function dragged(event) {
             rotateEnd = [event.pageX, event.pageY, 0];
@@ -83,8 +86,8 @@
 
     function load() {
         sphereBufferInfo = twgl.primitives.createCubeBufferInfo(gl, 2.0);
-        uniforms.earthcolor = twgl.createTexture(gl, { src: "images/earthcolor.jpg" });
-        uniforms.oceanmask = twgl.createTexture(gl, { src: "images/oceanmask.jpg" });
+        uniforms.earthcolor = twgl.createTexture(gl, { src: "images/earthcolor.jpg" }, function() {});
+        uniforms.oceanmask = twgl.createTexture(gl, { src: "images/oceanmask.jpg" }, function() {});
     }
 
     function render() {

@@ -58,9 +58,8 @@
         float saturation = 1.25;					// color saturation control
 
         // basic parameters
-        float top = 1.011;							// atmosphere top (up to 70 km)
-        float H = 0.00119;							// density scale-height of atmosphere (not pressure scale height)
-        vec3 L = positionToLight;
+        const float top = 1.011;							// atmosphere top (up to 70 km)
+        const float H = 0.00119;							// density scale-height of atmosphere (not pressure scale height)
 
         // Rayleigh extinction coefficients,
         // calculated for a nitrogen gas (polarizability 1.82e-30)
@@ -187,14 +186,14 @@
                 float rl = length(r);
                 float x = rl * invH50;
                 float h = x - X50;
-                float coschi_sun = dot( r / rl, L );
+                float coschi_sun = dot( r / rl, positionToLight );
                 float coschi_ray = dot( r / rl, infneg * drn );
 
                 last_amtl = H50 * chapman( X50, h, coschi_sun );
                 last_mray = infneg * H50 * chapman( X50, h, coschi_ray );
             }
 
-            float costheta = dot( drn, L );
+            float costheta = dot( drn, positionToLight );
             float phase = 3. / 4. * ( 1. + costheta * costheta );
 
             // main loop
@@ -213,7 +212,7 @@
                 float h = x - X50;
 
                 // calculate local incidence angle with the sunlight
-                float coschi_sun = dot( r / rl, L );
+                float coschi_sun = dot( r / rl, positionToLight );
                 float coschi_ray = dot( r / rl, infneg * drn );
 
                 // calculate the airmass along this segment of the ray
@@ -381,12 +380,12 @@
 
                 // get the direct light color
                 // from the transmittance of the sun through the atmosphere
-                vec3 lightcolor = transmittance( intersection.xyz, L );
+                vec3 lightcolor = transmittance( intersection.xyz, positionToLight );
 
                 // for shading the landmass we use the Lommel-Seeliger law
                 vec3 V = -viewdir;
                 float dotNV = max( 0., dot( N, V ) );
-                float dotNL = max( 0., dot( N, L ) );
+                float dotNL = max( 0., dot( N, positionToLight ) );
                 vec3 landcolor = lightcolor * surfacecolor * dotNL / (dotNL + dotNV);
 
                 // for shading the ocean
@@ -402,9 +401,9 @@
 
                 // we also add the specular reflection of the sun to the ocean
                 // uses the micro-facet shading model described in ShaderX7
-                vec3 H = normalize( L + V );
+                vec3 H = normalize( positionToLight + V );
                 float dotNH = max( 0., dot( N, H ) );
-                float dotLH = max( 0., dot( L, H ) );
+                float dotLH = max( 0., dot( positionToLight, H ) );
                 oceancolor += lightcolor * 0.02 * ( 32. + 1. ) / ( 8. ) * pow( dotNH, 32. ) / pow( dotLH, 3. ) * dotNL;
 
                 // final shaded surface color
