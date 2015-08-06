@@ -14,14 +14,14 @@ describe('Vector', function() {
         });
     });
     describe('#add', function() {
-        it('should return the component to compnent sum vector', function(){
+        it('should return the component to component sum vector', function() {
             var a = { x:1, y:0, z:0 };
             var b = { x:0, y:1, z:0 };
             expect(vector.add(a, b)).to.eql({ x: 1, y: 1, z: 0 });
         });
     });
     describe('#sub', function() {
-        it('should return the component to compnent difference vector', function(){
+        it('should return the component to component difference vector', function() {
             var a = { x:2, y:5, z:0 };
             var b = { x:0, y:1, z:0 };
             expect(vector.sub(a, b)).to.eql({ x: 2, y: 4, z: 0 });
