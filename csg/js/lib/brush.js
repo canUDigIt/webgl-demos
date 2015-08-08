@@ -23,8 +23,9 @@ module.exports = (function(){
 
     Brush.fromPolygons = function(polygons) {
         var planes = polygons.reduce(function(accumulator, polygon) {
-            if(indexOfObject(accumulator, polygon) === -1) {
-                accumulator.push(polygon.plane());
+            var plane = polygon.plane();
+            if(indexOfObject(accumulator, plane) === -1) {
+                accumulator.push(plane);
             }
             return accumulator;
         }, []);

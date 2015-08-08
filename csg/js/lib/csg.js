@@ -10,10 +10,14 @@ module.exports = (function() {
         var aResults = brushA.classifyBrush(brushB);
         var bResults = brushB.classifyBrush(brushA);
 
-        var outsidePolygons = aResults.outside;
-        outsidePolygons = outsidePolygons.concat(bResults.outside);
+        var polygons = aResults.outside;
+        polygons = polygons.concat(bResults.outside);
+        polygons = polygons.concat(aResults.touchingAligned);
+        polygons = polygons.concat(bResults.touchingAligned);
+        polygons = polygons.concat(aResults.touchingInverse);
+        polygons = polygons.concat(bResults.touchingInverse);
 
-        return Brush.fromPolygons(outsidePolygons);
+        return Brush.fromPolygons(polygons);
     };
 
     return CSG;

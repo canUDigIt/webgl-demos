@@ -7,6 +7,27 @@ var expect = require('chai').expect,
     CSG = require('../js/lib/csg.js'),
     THREE = require('three');
 
+function includesPlanes(planesUnderQuestion, planesToInclude) {
+    var usedIndices = [],
+        found = false;
+
+    for(var i = 0; i < planesToInclude.length; i++) {
+        for(var j = 0; j < planesUnderQuestion.length; j++) {
+            if(planesUnderQuestion[j].equals(planesToInclude[i]) && usedIndices.indexOf(j) === -1) {
+                usedIndices.push(j);
+                found = true;
+                break;
+            }
+        }
+
+        if(!found) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 describe('Union', function() {
     it('should join two brushes together', function () {
         var leftBox = new THREE.BoxGeometry(1, 1, 1),
@@ -27,6 +48,8 @@ describe('Union', function() {
             expectedBrush = Brush.fromGeometry(expectedBox);
 
         var resultingBrush = CSG.union(leftBoxBrush, rightBoxBrush);
-        expect(resultingBrush).to.eql(expectedBrush);
+
+        expect(resultingBrush.planes).to.have.length(expectedBrush.planes.length);
+        expect(includesPlanes(resultingBrush.planes, expectedBrush.planes)).to.be.true;
     });
 });
