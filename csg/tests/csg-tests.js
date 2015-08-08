@@ -8,7 +8,7 @@ var expect = require('chai').expect,
     THREE = require('three');
 
 describe('Union', function() {
-    it('should return a brush that represents both brushes volume', function () {
+    it('should join two brushes together', function () {
         var leftBox = new THREE.BoxGeometry(1, 1, 1),
             rightBox = new THREE.BoxGeometry(1, 1, 1),
             leftTranslate = new THREE.Matrix4(),
