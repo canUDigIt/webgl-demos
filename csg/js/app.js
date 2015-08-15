@@ -3,6 +3,7 @@ var scene, camera, renderer;
 var plane, rollOverMesh, rollOverMaterial, currentGeometry, currentMaterial;
 var raycaster, mouse;
 var objects;
+var selectedObjects, selectedObjectIndex, maxNumberOfSelectedObjects, selectedMaterial;
 var isShiftDown;
 
 function init() {
@@ -17,7 +18,7 @@ function init() {
     var $documentElement = $( document );
     $documentElement.resize( onResize );
     $documentElement.mousemove( onMouseMove );
-    $documentElement.click( onMouseDown );
+    $documentElement.click( onMouseClick );
     $documentElement.keydown( onKeyDown );
     $documentElement.keyup( onKeyUp );
 
@@ -38,7 +39,18 @@ function init() {
     });
     rollOverMesh = new THREE.Mesh( currentGeometry, rollOverMaterial );
 
+    selectedMaterial = new THREE.MeshPhongMaterial({
+       color: 0x0000ff
+    });
+
     objects = [];
+
+    maxNumberOfSelectedObjects = 2;
+    selectedObjects = [];
+    for (var i = 0; i < maxNumberOfSelectedObjects; i++){
+        selectedObjects.push( null );
+    }
+    selectedObjectIndex = 0;
 
     plane = createGrid( 1, 50 );
 
@@ -80,7 +92,7 @@ function onMouseMove ( event ) {
     }
 }
 
-function onMouseDown( event ) {
+function onMouseClick( event ) {
     event.preventDefault();
 
     mouse.set( event.clientX / window.innerWidth * 2 - 1, -(event.clientY / window.innerHeight) * 2 + 1 );
@@ -100,10 +112,15 @@ function onMouseDown( event ) {
             }
         }
         else {
-            var shape = new THREE.Mesh( currentGeometry, currentMaterial );
-            shape.position.copy( intersect.point ).add( intersect.object.up.clone().multiplyScalar( currentGeometry.boundingBox.size().y / 2 ) );
-            objects.push( shape );
-            scene.add( shape );
+            if ( intersect.object == plane ) {
+                var shape = new THREE.Mesh(currentGeometry, currentMaterial);
+                shape.position.copy(intersect.point).add(intersect.object.up.clone().multiplyScalar(currentGeometry.boundingBox.size().y / 2));
+                objects.push(shape);
+                scene.add(shape);
+            }
+            else {
+                objectClicked( intersect.object );
+            }
         }
     }
 }
@@ -141,6 +158,50 @@ function createGrid(step, size) {
     });
 
     return  new THREE.Line(geometry, material, THREE.LinePieces);
+}
+
+function deselect(object) {
+    var index = selectedObjects.indexOf(object);
+    selectedObjects[index].material = currentMaterial;
+    selectedObjects[index] = null;
+}
+
+function freeSpaceInSelectedObjectList() {
+    for (var i = 0; i < maxNumberOfSelectedObjects; i++) {
+        if (selectedObjects[i] === null) {
+            return i;
+        }
+    }
+    return -1;
+}
+
+function oldestSelectedObjectIndex() {
+    return (selectedObjectIndex + 1) % maxNumberOfSelectedObjects;
+}
+
+function select(object) {
+    var index = freeSpaceInSelectedObjectList();
+    if ( index === -1 ) {
+        index = oldestSelectedObjectIndex();
+        selectedObjects[index].material = currentMaterial;
+    }
+    selectedObjectIndex = index;
+    selectedObjects[index] = object;
+    object.material = selectedMaterial;
+}
+
+function isSelected(object) {
+    return selectedObjects.indexOf(object) !== -1;
+}
+
+function objectClicked( object ) {
+    
+    if( isSelected(object) ) {
+        deselect(object);
+    }
+    else {
+        select(object);
+    }
 }
 
 function render() {
