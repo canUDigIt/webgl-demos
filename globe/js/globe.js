@@ -22,7 +22,7 @@
         sphereBufferInfo = {},
         rotateStart = [0, 0, 0],
         rotateEnd = [0, 0, 0],
-        rotationSpeed = 0.2,
+        rotationSpeed = 1.25,
         lightTheta = Math.atan2(lightPos[0], lightPos[2]),
         lightPhi = Math.atan2(Math.sqrt(lightPos[0] * lightPos[0] + lightPos[2] * lightPos[2]), lightPos[1]),
         lightThetaDelta = 0,
