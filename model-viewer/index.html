@@ -35,13 +35,16 @@
             var gl = document.getElementById("c").getContext("webgl");
             var programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]);
             var m4 = twgl.m4;
+            var v3 = twgl.v3;
             var fovRadians = Math.PI / 4;
             var aspectRatio = gl.canvas.width / gl.canvas.height;
             var near = 0.1;
             var far = 100.0;
             var perspective = m4.perspective(fovRadians, aspectRatio, near, far);
             var camera = m4.identity();
-            var distance = [0, 0, 5];
+            var worldUp = v3.create(0, 1, 0);
+            var target = v3.create(0, 0, 0);
+            var distance = 5;
             var yaw = 0;
             var pitch = 0;
             var roll = 0;
@@ -79,9 +82,26 @@
                         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
                         gl.clearColor(0, 0, 0, 1);
                         gl.clear(gl.COLOR_BUFFER_BIT);
+                        
+                        var R = yawPitchRoll();
+                        var T = m4.transformPoint(R, v3.create(0, 0, distance));
+                        var position = v3.add(target, T);
+
+                        var look = v3.create();
+                        v3.subtract(target, position, look);
+                        v3.normalize(look, look);
+
+                        var right = v3.create();
+                        v3.cross(look, worldUp, right);
+
+                        var up = v3.create();
+                        v3.cross(right, look, up);
+
+                        var view = m4.create();
+                        m4.lookAt(position, target, worldUp, view);
 
                         var uniforms = {
-                            uMVMatrix: m4.inverse(m4.multiply(yawPitchRoll(), m4.translation(distance))),
+                            uMVMatrix: m4.inverse(view),
                             uPMatrix: perspective
                         };
 
@@ -122,6 +142,16 @@
                     pitch += deltaY * yWeight;
                     yaw += deltaX * xWeight;
                 }
+
+                function clamp(min, x, max) {
+                    return Math.min(Math.max(min, x), max);
+                }
+
+                $(gl.canvas).on("wheel", function(event){
+                    event.preventDefault();
+                    distance = clamp(2, distance - event.originalEvent.deltaY * 0.005, 25);
+                    
+                });
             });
         });
     </script>
