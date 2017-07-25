@@ -67,6 +67,7 @@
             var programInfo = twgl.createProgramInfo(gl, ["vs", "fs"]);
             var m4 = twgl.m4;
             var v3 = twgl.v3;
+
             var fovRadians = Math.PI / 4;
             var aspectRatio = gl.canvas.width / gl.canvas.height;
             var near = 0.1;
@@ -76,9 +77,15 @@
             var worldUp = v3.create(0, 1, 0);
             var target = v3.create(0, 0, 0);
             var distance = 5;
+            var minDistance = 2;
+            var maxDistance = 25;
+            var minPitch = -89 * (Math.PI / 180);
+            var maxPitch = 89 * (Math.PI / 180);
             var yaw = 0;
             var pitch = 0;
             var roll = 0;
+            var rotationSpeed = 1 / 100;
+            var zoomSpeed = 1 / 250;
 
             var myRequest = new Request('box.json');
 
@@ -152,41 +159,44 @@
 
             var dragging = false;
             var startX, startY;
-            $(gl.canvas).mousedown(function(event) {
+            gl.canvas.addEventListener("mousedown", function(event) {
                 event.preventDefault();
                 startX = event.pageX;
                 startY = event.pageY;
                 dragging = true;
             });
 
-            $(gl.canvas).mouseup(function(event) {
+            gl.canvas.addEventListener("mouseup", function(event) {
                 event.preventDefault();
                 dragging = false;
             });
 
-            $(gl.canvas).mousemove(function(event) {
+            gl.canvas.addEventListener("mouseout", function(event) {
+                event.preventDefault();
+                dragging = false;
+            });
+
+            gl.canvas.addEventListener("mousemove", function(event) {
                 event.preventDefault();
                 if (dragging) {
                     deltaX = event.pageX - startX;
                     deltaY = event.pageY - startY;
                     startX = event.pageX;
                     startY = event.pageY;
-                    var xWeight = 2 * Math.PI / gl.canvas.width;
-                    var yWeight = (Math.PI / 4) / gl.canvas.height;
-                    pitch += deltaY * yWeight;
-                    yaw += deltaX * xWeight;
+                    pitch = clamp(minPitch, pitch - deltaY * rotationSpeed, maxPitch);
+                    yaw -= deltaX * rotationSpeed;
                 }
-
-                function clamp(min, x, max) {
-                    return Math.min(Math.max(min, x), max);
-                }
-
-                $(gl.canvas).on("wheel", function(event){
-                    event.preventDefault();
-                    distance = clamp(2, distance - event.originalEvent.deltaY * 0.005, 25);
-                    
-                });
             });
+
+            gl.canvas.addEventListener("wheel", function(event){
+                var delta = event.deltaY * zoomSpeed;
+                distance = clamp(minDistance, distance - delta, maxDistance);
+                event.preventDefault();
+            });
+
+            function clamp(min, x, max) {
+                return Math.min(Math.max(min, x), max);
+            }
         });
     </script>
 </head>
