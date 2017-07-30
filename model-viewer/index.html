@@ -68,6 +68,8 @@
             var m4 = twgl.m4;
             var v3 = twgl.v3;
 
+            var objects = [];
+
             var fovRadians = Math.PI / 4;
             var aspectRatio = gl.canvas.width / gl.canvas.height;
             var near = 0.1;
@@ -87,27 +89,31 @@
             var rotationSpeed = 1 / 100;
             var zoomSpeed = 1 / 250;
 
-            var myRequest = new Request('box.json');
+            var myRequest = new Request('models/Pokemon.json');
 
             gl.enable(gl.DEPTH_TEST);
 
             fetch(myRequest)
                 .then(function(response) { return response.json(); })
-                .then(function(data) {
-                    var mesh = data.meshes[0];
-                    var arrays = {
-                        position: mesh.vertices,
-                        normal: mesh.normals,
-                        indices: []
-                    };
-                    
-                    mesh.faces.forEach(function(face) {
-                        arrays.indices.push(face[0]);
-                        arrays.indices.push(face[1]);
-                        arrays.indices.push(face[2]);
-                    });
+                .then(function(json) {
+                    json.meshes.forEach(function(mesh) {
+                        var arrays = {
+                            position: mesh.vertices,
+                            normal: mesh.normals,
+                            indices: []
+                        };
+                        
+                        mesh.faces.forEach(function(face) {
+                            arrays.indices.push(face[0]);
+                            arrays.indices.push(face[1]);
+                            arrays.indices.push(face[2]);
+                        });
 
-                    var bufferInfo = twgl.createBufferInfoFromArrays(gl, arrays);
+                        objects.push({
+                            programInfo: programInfo,
+                            bufferInfo: twgl.createBufferInfoFromArrays(gl, arrays)
+                        });
+                    });
 
                     function yawPitchRoll() {
                         var rotation = m4.identity();
@@ -147,9 +153,8 @@
                         };
 
                         gl.useProgram(programInfo.program);
-                        twgl.setBuffersAndAttributes(gl, programInfo, bufferInfo);
                         twgl.setUniforms(programInfo, uniforms);
-                        twgl.drawBufferInfo(gl, bufferInfo);
+                        twgl.drawObjectList(gl, objects);
 
                         requestAnimationFrame(render);
                     }
