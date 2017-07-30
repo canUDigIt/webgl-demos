@@ -39,25 +39,25 @@
         varying vec4 eyePosition;
         varying vec4 eyeNormal;
 
-        uniform vec3 uLightPosition;
+        uniform vec3 uLightDirection;
         uniform mat4 uMVMatrix;
 
         vec4 color = vec4(1.0, 0.0, 0.0, 1.0);
-        float k0 = 1.0;
-        float k1 = 0.0;
-        float k2 = 0.0;
+        vec4 ambient = vec4(0.2, 0.2, 0.2, 1.0);
+        vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
+        float specularStrength = 0.5;
 
         void main()
         {
-            vec4 eyeLightPosition = uMVMatrix * vec4(uLightPosition, 1.0);
-            vec4 L = eyeLightPosition - eyePosition;
-            float d = length(L);
-            L = normalize(L);
-            float diffuse = max(0.0, dot(eyeNormal, L));
-            float attenuation = 1.0 / (k0 + (k1*d) + (k2*d*d));
-            diffuse *= attenuation;
+            vec4 eyeLightDirection = uMVMatrix * vec4(uLightDirection, 0.0);
+            vec4 L = normalize(eyeLightDirection);
 
-            gl_FragColor = diffuse * color;
+            vec4 norm = normalize(eyeNormal);
+
+            float cosTheta = max(0.0, dot(norm, L));
+            vec4 diffuse = cosTheta * lightColor;
+
+            gl_FragColor = (diffuse + ambient) * color;
         }
     </script>
 
@@ -143,7 +143,7 @@
                             uMVMatrix: m4.inverse(view),
                             uPMatrix: perspective,
                             uNMatrix: m4.transpose(view),
-                            uLightPosition: v3.add(position, v3.create(0, 5, 0))
+                            uLightDirection: v3.subtract(v3.add(position, v3.create(0, 5, 0)), target)
                         };
 
                         gl.useProgram(programInfo.program);
