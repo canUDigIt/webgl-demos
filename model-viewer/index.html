@@ -10,12 +10,13 @@
     <!-- WEBGL Libs //-->
     <script src="js/lib/twgl-full.js"></script>
 
-    <! -- Shaders //-->
-    <script id="vs" type="x-shader/x-vertex">
+    <!-- Shaders //-->
+    <script id="vs" type="notjs">
         precision mediump float;
 
         attribute vec4 position;
         attribute vec4 normal;
+        attribute vec2 texcoord;
 
         uniform mat4 uMVMatrix;
         uniform mat4 uPMatrix;
@@ -23,32 +24,36 @@
 
         varying vec4 eyePosition;
         varying vec4 eyeNormal;
+        varying vec2 uv;
 
-        void main() 
+        void main()
         {
            gl_Position = uPMatrix * uMVMatrix * position;
 
            eyePosition = uMVMatrix * position;
            eyeNormal = uNMatrix * normal;
+           uv = texcoord;
         }
     </script>
 
-    <script id="fs" type="x-shader/x-fragment">
+    <script id="fs" type="notjs">
         precision mediump float;
 
         varying vec4 eyePosition;
         varying vec4 eyeNormal;
+        varying vec2 uv;
 
         uniform vec3 uLightDirection;
         uniform mat4 uMVMatrix;
+        uniform sampler2D uDiffuse;
 
-        vec4 color = vec4(1.0, 0.0, 0.0, 1.0);
         vec4 ambient = vec4(0.2, 0.2, 0.2, 1.0);
         vec4 lightColor = vec4(1.0, 1.0, 1.0, 1.0);
-        float specularStrength = 0.5;
 
         void main()
         {
+            vec4 color = texture2D(uDiffuse, uv);
+
             vec4 eyeLightDirection = uMVMatrix * vec4(uLightDirection, 0.0);
             vec4 L = normalize(eyeLightDirection);
 
@@ -89,9 +94,13 @@
             var rotationSpeed = 1 / 100;
             var zoomSpeed = 1 / 250;
 
-            var myRequest = new Request('models/Pokemon.json');
-
             gl.enable(gl.DEPTH_TEST);
+
+            var textures = twgl.createTextures(gl, {
+                diffuse: {src: "models/Final_Pokemon_Diffuse.jpg"}
+            });
+
+            var myRequest = new Request('models/Pokemon.json');
 
             fetch(myRequest)
                 .then(function(response) { return response.json(); })
@@ -99,10 +108,11 @@
                     json.meshes.forEach(function(mesh) {
                         var arrays = {
                             position: mesh.vertices,
+                            texcoord: mesh.texturecoords[0],
                             normal: mesh.normals,
                             indices: []
                         };
-                        
+
                         mesh.faces.forEach(function(face) {
                             arrays.indices.push(face[0]);
                             arrays.indices.push(face[1]);
@@ -118,7 +128,7 @@
                     function yawPitchRoll() {
                         var rotation = m4.identity();
                          m4.rotateY(rotation, yaw, rotation);
-                         m4.rotateX(rotation, pitch, rotation); 
+                         m4.rotateX(rotation, pitch, rotation);
                          m4.rotateZ(rotation, roll, rotation);
                          return rotation;
                     }
@@ -127,7 +137,7 @@
                         gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
                         gl.clearColor(0, 0, 0, 1);
                         gl.clear(gl.COLOR_BUFFER_BIT);
-                        
+
                         var R = yawPitchRoll();
                         var T = m4.transformPoint(R, v3.create(0, 0, distance));
                         var position = v3.add(target, T);
@@ -145,11 +155,14 @@
                         var view = m4.create();
                         m4.lookAt(position, target, worldUp, view);
 
+                        var lightPosition = v3.add(position, v3.create(0, 5, 0));
+
                         var uniforms = {
                             uMVMatrix: m4.inverse(view),
                             uPMatrix: perspective,
                             uNMatrix: m4.transpose(view),
-                            uLightDirection: v3.subtract(v3.add(position, v3.create(0, 5, 0)), target)
+                            uLightDirection: v3.subtract(target, lightPosition),
+                            uDiffuse: textures.diffuse
                         };
 
                         gl.useProgram(programInfo.program);
@@ -212,7 +225,7 @@
 
     <script type="text/javascript">
 
-        
+
     </script>
 </body>
 </html>
