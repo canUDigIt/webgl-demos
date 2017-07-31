@@ -52,7 +52,7 @@
 
         void main()
         {
-            vec4 color = texture2D(uDiffuse, uv);
+            vec4 color = texture2D(uDiffuse, vec2(uv.s, 1.0 - uv.t));
 
             vec4 eyeLightDirection = uMVMatrix * vec4(uLightDirection, 0.0);
             vec4 L = normalize(eyeLightDirection);
