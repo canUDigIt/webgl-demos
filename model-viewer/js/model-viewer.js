@@ -100,11 +100,54 @@
             }
         });
 
-        const myRequest = new Request('models/Pokemon.json');
+        function progress(loaded, total) {
+            console.log("Loaded " + Math.round(loaded/total*100) + "%");
+        }
 
-        fetch(myRequest)
-            .then(function(response) { return response.json(); })
-            .then(function(json) {
+        console.log("Downloading model...");
+        fetch("models/Pokemon.json")
+            .then(response => {
+                if (!response.ok) {
+                    throw Error(response.status + ' ' + response.statusText);
+                }
+                
+                if (!response.body) {
+                    throw Error("ReadableStreams are not yet supported in your brownser");
+                }
+
+                const contentLength = response.headers.get("content-length");
+                if (!contentLength) {
+                    throw Error("Content-Length response header isn't available.");
+                }
+
+                const totalBytes = parseInt(contentLength, 10);
+                let loaded = 0;
+
+                return new Response(
+                    new ReadableStream({
+                        start(controller) {
+                            const reader = response.body.getReader();
+                            reader.read().then(function processData({done, value}) {
+                                if (done) {
+                                    controller.close();
+                                    console.log("Done.");
+                                    return;
+                                }
+                                loaded += value.byteLength;
+                                progress(loaded, totalBytes);
+                                controller.enqueue(value);
+                                return reader.read().then(processData);
+                            }).catch(error => {
+                                console.error(error);
+                                controller.error(error);
+                            })
+                        }
+                    })
+                );
+            })
+            .then(response => response.json())
+            .then(json => {
+                console.log("Processing model...");
                 json.meshes.forEach(function(mesh) {
                     const arrays = {
                         position: mesh.vertices,
@@ -124,6 +167,10 @@
                         bufferInfo: twgl.createBufferInfoFromArrays(gl, arrays)
                     });
                 });
+                console.log("Done.");
+            })
+            .catch(error => {
+                console.error(error);
             });
 
         let dragging = false;
